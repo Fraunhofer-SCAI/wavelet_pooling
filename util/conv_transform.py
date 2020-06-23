@@ -126,7 +126,16 @@ def construct_2d_filt(lo, hi):
 
 
 def conv_fwt_2d(data, wavelet, scales: int = None):
-    """ 2d non-seperated fwt """
+    """ Non seperated two dimensional wavelet transform.
+
+    Args:
+        data ([type]): [batch_size, 1, height, width]
+        wavelet ([type]): [description]
+        scales (int, optional): [description]. Defaults to None.
+
+    Returns:
+        [type]: [description]
+    """
     # dec_lo, dec_hi, _, _ = wavelet.filter_bank
     # filt_len = len(dec_lo)
     # dec_lo = torch.tensor(dec_lo[::-1]).unsqueeze(0)

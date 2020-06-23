@@ -1,10 +1,13 @@
 import torch
 import numpy as np
 import pywt
+import sys
+sys.path.append('./')
 from util.mackey_glass import MackeyGenerator
 from util.learnable_wavelets import OrthogonalWavelet
 from util.conv_transform import conv_fwt, conv_ifwt, conv_fwt_2d, conv_ifwt_2d
 from util.conv_transform import flatten_2d_coeff_lst
+
 # import matplotlib.pyplot as plt
 
 

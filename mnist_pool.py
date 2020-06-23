@@ -1,19 +1,21 @@
 from __future__ import print_function
 import argparse
+import pywt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
+from util.wavelet_pool2d import StaticWaveletPool2d
 # Test set: Average loss: 0.0295, Accuracy: 9905/10000 (99%)
 
 
 class Net(nn.Module):
-    def __init__(self):
+    def __init__(self, norm_fun=None):
         super(Net, self).__init__()
         self.conv1 = nn.Conv2d(1, 20, 5, padding=0, stride=1)
-        self.norm1 = nn.BatchNorm2d(20)
+        self.norm1 = StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'))
         self.pool1 = nn.MaxPool2d(2)
         self.conv2 = nn.Conv2d(20, 50, 5, padding=0, stride=1)
         self.norm2 = nn.BatchNorm2d(50)
