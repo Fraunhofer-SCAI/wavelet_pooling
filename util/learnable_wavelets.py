@@ -6,8 +6,10 @@ from abc import ABC, abstractmethod
 
 
 class WaveletFilter(ABC):
-    """ Interface for learnable wavelets. Each wavelets has a filter bank a loss functions
-    and comes with functionality the test the perfect reconstruction and anti aliasing conditions.
+    """ Interface for learnable wavelets.
+        Each wavelet has a filter bank a loss function
+        and comes with functionality the test the perfect
+        reconstruction and anti-aliasing conditions.
     """
 
     @property
@@ -28,9 +30,11 @@ class WaveletFilter(ABC):
     def parameters(self):
         pass
 
-    def alias_cancellation_loss(self) -> [torch.Tensor, torch.Tensor, torch.Tensor]:
+    def alias_cancellation_loss(self) -> [torch.Tensor, torch.Tensor,
+                                          torch.Tensor]:
         """ Strang+Nguyen 105: F0(z) = H1(-z); F1(z) = -H0(-z)
-        Alternating sign convention from 0 to N see Strang overview on the back of the cover.
+        Alternating sign convention from 0 to N see Strang overview
+        on the back of the cover.
         """
         dec_lo, dec_hi, rec_lo, rec_hi = self.filter_bank
         m1 = torch.tensor([-1], device=dec_lo.device, dtype=dec_lo.dtype)
@@ -47,14 +51,16 @@ class WaveletFilter(ABC):
         err2s = torch.sum(err2*err2)
         return err1s + err2s, err1, err2
 
-    def perfect_reconstruction_loss(self) -> [torch.Tensor, torch.Tensor, torch.Tensor]:
+    def perfect_reconstruction_loss(self) -> [torch.Tensor, torch.Tensor,
+                                              torch.Tensor]:
         """ Strang 107: Assuming alias cancellation holds:
         P(z) = F(z)H(z)
         Product filter P(z) + P(-z) = 2.
         However since alias cancellation is implemented as soft constraint:
         P_0 + P_1 = 2
         Somehow numpy and torch implement convolution differently.
-        For some reason the machine learning people call cross-correlation convolution.
+        For some reason the machine learning people call cross-correlation
+        convolution.
         https://discuss.pytorch.org/t/numpy-convolve-and-conv1d-in-pytorch/12172
         Therefore for true convolution one element needs to be flipped.
         """
@@ -76,8 +82,10 @@ class WaveletFilter(ABC):
         two_at_power_zero = torch.zeros(p_test.shape, device=p_test.device,
                                         dtype=p_test.dtype)
         # numpy comparison for debugging.
-        # np.convolve(self.init_wavelet.filter_bank[0], self.init_wavelet.filter_bank[2])
-        # np.convolve(self.init_wavelet.filter_bank[1], self.init_wavelet.filter_bank[3])
+        # np.convolve(self.init_wavelet.filter_bank[0],
+        #             self.init_wavelet.filter_bank[2])
+        # np.convolve(self.init_wavelet.filter_bank[1],
+        #             self.init_wavelet.filter_bank[3])
         two_at_power_zero[..., p_test.shape[-1]//2] = 2
         # square the error
         errs = (p_test - two_at_power_zero)*(p_test - two_at_power_zero)
@@ -103,7 +111,8 @@ class ProductFilter(WaveletFilter):
         return self.dec_lo.shape[-1]
 
     def product_filter_loss(self):
-        return self.perfect_reconstruction_loss()[0] + self.alias_cancellation_loss()[0]
+        return self.perfect_reconstruction_loss()[0] \
+               + self.alias_cancellation_loss()[0]
 
     def wavelet_loss(self):
         return self.product_filter_loss()
@@ -112,10 +121,12 @@ class ProductFilter(WaveletFilter):
 class OrthogonalWavelet(WaveletFilter):
     def __init__(self, init_tensor: torch.Tensor):
         self.dec_lo = init_tensor
-        m1 = torch.tensor([-1], device=self.dec_lo.device, dtype=self.dec_lo.dtype)
+        m1 = torch.tensor([-1], device=self.dec_lo.device,
+                          dtype=self.dec_lo.dtype)
         length = self.dec_lo.shape[0]
-        self.mask = torch.tensor([torch.pow(m1, n) for n in range(length)][::-1],
-                                 device=self.dec_lo.device, dtype=self.dec_lo.dtype)
+        self.mask = \
+            torch.tensor([torch.pow(m1, n) for n in range(length)][::-1],
+                         device=self.dec_lo.device, dtype=self.dec_lo.dtype)
 
     def _construct_filter_bank(self):
         dec_hi = self.mask*self.dec_lo.flip(-1)
@@ -142,20 +153,25 @@ class OrthogonalWavelet(WaveletFilter):
 
     def rec_lo_orthogonality_loss(self):
         """ See Strang p. 148/149 or Harbo p. 80.
-            Since L is a convolution matrix, LL^T can be evaluated trough convolution.
+            Since L is a convolution matrix, LL^T can be evaluated
+            trough convolution.
             :return: A tensor with the orthogonality constraint value. """
         filt_len = self.dec_lo.shape[-1]
-        pad_dec_lo = torch.cat([self.dec_lo, torch.zeros([filt_len, ], device=self.dec_lo.device)], -1)
+        pad_dec_lo = torch.cat([self.dec_lo, torch.zeros([filt_len, ],
+                               device=self.dec_lo.device)], -1)
         res = torch.nn.functional.conv1d(pad_dec_lo.unsqueeze(0).unsqueeze(0),
-                                         self.dec_lo.unsqueeze(0).unsqueeze(0), stride=2)
+                                         self.dec_lo.unsqueeze(0).unsqueeze(0),
+                                         stride=2)
         test = torch.zeros_like(res.squeeze(0).squeeze(0))
         test[0] = 1
         err = res-test
         return torch.sum(err*err)
 
     def filt_bank_orthogonality_loss(self):
-        """ On Page 79 of the Book Ripples in Mathematics by Jensen la Cour-Harbo the constraint
-            g0[k] = h0[-k] and g1[k] = h1[-k] for orthogonal filters is presented. A measurement
+        """ On Page 79 of the Book Ripples in Mathematics
+            by Jensen la Cour-Harbo the constraint
+            g0[k] = h0[-k] and g1[k] = h1[-k] for orthogonal filters
+            is presented. A measurement
             is implemented below."""
         dec_hi, rec_lo, rec_hi = self._construct_filter_bank()
         eq0 = self.dec_lo - rec_lo.flip(-1)

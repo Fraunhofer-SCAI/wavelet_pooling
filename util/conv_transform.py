@@ -1,10 +1,10 @@
 # Created by moritz wolter, 14.04.20
 import torch
-import numpy as np
+# import numpy as np
 import pywt
-from util.mackey_glass import MackeyGenerator
-from util.learnable_wavelets import OrthogonalWavelet
-import matplotlib.pyplot as plt
+# from util.mackey_glass import MackeyGenerator
+# from util.learnable_wavelets import OrthogonalWavelet
+# import matplotlib.pyplot as plt
 
 
 def get_filter_tensors(wavelet, flip):
@@ -27,22 +27,44 @@ def get_filter_tensors(wavelet, flip):
     return dec_lo, dec_hi, rec_lo, rec_hi
 
 
-def get_pad(data_len, wavelet):
+def get_pad(data_len, filt_len):
     """ Compute the required padding.
     :param data: The input tensor.
     :param wavelet: The wavelet filters used.
     :return: The numbers to attach on the edges of the input.
     """
-    filt_len = wavelet.__len__()
-    pywt_coeff_no = (data_len + filt_len - 1) // 2
-    pywt_len = pywt.dwt_coeff_len(data_len, filt_len, mode='reflect')
-    assert pywt_coeff_no == pywt_len, 'padding error.'
-    pad = (2*filt_len - 3)//2
+    # filt_len = wavelet.__len__()
+    # pywt_coeff_no = (data_len + filt_len - 1) // 2
+    # pywt_len = pywt.dwt_coeff_len(data_len, filt_len, mode='reflect')
+    # assert pywt_coeff_no == pywt_len, 'padding error.'
+    # pad = (2*filt_len - 3)//2
+    # if data_len % 2 != 0:
+    #     pad += 1
+    # pt_coeff_no = (data_len + 2*pad - (filt_len - 1) - 1) // 2 + 1
+    # assert pt_coeff_no == pywt_len, \
+    #  'padding error, this is a bug please open an issue on github.'
+    # pad to we see all filter positions and pywt compatability.
+    # convolution output length:
+    # see https://arxiv.org/pdf/1603.07285.pdf section 2.3:
+    # floor([data_len - filt_len]/2) + 1
+    # should equal pywt output length
+    # floor((data_len + filt_len - 1)/2)
+    # => floor([data_len + total_pad - filt_len]/2) + 1
+    #    = floor((data_len + filt_len - 1)/2)
+    # (data_len + total_pad - filt_len) + 2 = data_len + filt_len - 1
+    # total_pad = 2*filt_len - 3
+    padr = 0
+    padl = 0
+    if filt_len > 2:
+        # we pad half of the total requried padding on each side.
+        padr += (2 * filt_len - 3) // 2
+        padl += (2 * filt_len - 3) // 2
+
+    # pad to even singal length.
     if data_len % 2 != 0:
-        pad += 1
-    pt_coeff_no = (data_len + 2*pad - (filt_len - 1) - 1) // 2 + 1
-    assert pt_coeff_no == pywt_len, 'padding error, this is a bug please open an issue on github.'
-    return pad
+        padl += 1
+
+    return padr, padl
 
 
 def fwt_pad(data, wavelet):
@@ -51,19 +73,18 @@ def fwt_pad(data, wavelet):
     :param wavelet: The input wavelet following the pywt wavelet format.
     :return: The padded input data
     """
-    # following https://pywavelets.readthedocs.io/en/latest/ref/dwt-discrete-wavelet-transform.html
-    pad = get_pad(data.shape[-1], wavelet)
+    padr, padl = get_pad(data.shape[-1], len(wavelet.dec_lo))
 
     # print('fwt pad', data.shape, pad)
-    data_pad = torch.nn.functional.pad(data, [pad, pad],
+    data_pad = torch.nn.functional.pad(data, [padl, padr],
                                        mode='reflect')
     return data_pad
 
 
 def fwt_pad2d(data, wavelet):
-    padx = get_pad(data.shape[-2], wavelet)
-    pady = get_pad(data.shape[-1], wavelet)
-    data_pad = torch.nn.functional.pad(data, [padx, padx, pady, pady],
+    padb, padt = get_pad(data.shape[-2], len(wavelet.dec_lo))
+    padr, padl = get_pad(data.shape[-1], len(wavelet.dec_lo))
+    data_pad = torch.nn.functional.pad(data, [padt, padb, padl, padr],
                                        mode='reflect')
     return data_pad
 
@@ -104,7 +125,7 @@ def construct_2d_filt(lo, hi):
     return filt
 
 
-def conv_fwt_2d(data, wavelet, scales: int=None):
+def conv_fwt_2d(data, wavelet, scales: int = None):
     """ 2d non-seperated fwt """
     # dec_lo, dec_hi, _, _ = wavelet.filter_bank
     # filt_len = len(dec_lo)
@@ -142,8 +163,10 @@ def conv_ifwt_2d(coeffs, wavelet):
 
     res_ll = coeffs[0]
     for c_pos, res_lh_hl_hh in enumerate(coeffs[1:]):
-        res_ll = torch.cat([res_ll, res_lh_hl_hh[0], res_lh_hl_hh[1], res_lh_hl_hh[2]], 1)
-        res_ll = torch.nn.functional.conv_transpose2d(res_ll, rec_filt, stride=2)
+        res_ll = torch.cat([res_ll, res_lh_hl_hh[0],
+                            res_lh_hl_hh[1], res_lh_hl_hh[2]], 1)
+        res_ll = torch.nn.functional.conv_transpose2d(res_ll, rec_filt,
+                                                      stride=2)
 
         # remove the padding
         padl = (2*filt_len - 3)//2
@@ -158,11 +181,13 @@ def conv_ifwt_2d(coeffs, wavelet):
             if next_len != pred_len:
                 padl += 1
                 pred_len = res_ll.shape[-1] - (padl + padr)
-                assert next_len == pred_len, 'padding error, please open an issue on github '
+                assert next_len == pred_len, \
+                    'padding error, please open an issue on github '
             if next_len2 != pred_len2:
                 padt += 1
                 pred_len2 = res_ll.shape[-2] - (padt + padb)
-                assert next_len2 == pred_len2, 'padding error, please open an issue on github '
+                assert next_len2 == pred_len2, \
+                    'padding error, please open an issue on github '
         if padt > 0:
             res_ll = res_ll[..., padt:, :]
         if padb > 0:
@@ -187,7 +212,7 @@ def conv_fwt(data, wavelet, scales: int = None):
     result_lst = []
     res_lo = data
     for s in range(scales):
-        #if filt_len > 2:
+        # if filt_len > 2:
         res_lo = fwt_pad(res_lo, wavelet)
         res = torch.nn.functional.conv1d(res_lo, filt, stride=2)
         res_lo, res_hi = torch.split(res, 1, 1)
@@ -210,7 +235,8 @@ def conv_ifwt(coeffs, wavelet):
     for c_pos, res_hi in enumerate(coeffs[1:]):
         # print('shapes', res_lo.shape, res_hi.shape)
         res_lo = torch.stack([res_lo, res_hi], 1)
-        res_lo = torch.nn.functional.conv_transpose1d(res_lo, filt, stride=2).squeeze(1)
+        res_lo = torch.nn.functional.conv_transpose1d(
+            res_lo, filt, stride=2).squeeze(1)
 
         # remove the padding
         padl = (2*filt_len - 3)//2
@@ -221,7 +247,8 @@ def conv_ifwt(coeffs, wavelet):
             if nex_len != pred_len:
                 padl += 1
                 pred_len = res_lo.shape[-1] - (padl + padr)
-                assert nex_len == pred_len, 'padding error, please open an issue on github '
+                assert nex_len == pred_len, \
+                    'padding error, please open an issue on github '
             # ensure correct padding removal.
         # if padl > 0 and padr > 0:
         #     res_lo = res_lo[..., padl:-padr]
@@ -230,152 +257,3 @@ def conv_ifwt(coeffs, wavelet):
         if padr > 0:
             res_lo = res_lo[..., :-padr]
     return res_lo
-
-
-if __name__ == '__main__':
-    data = [1., 2., 3., 4., 5., 6., 7., 8., 9., 10., 11., 12., 13., 14., 15., 16.]
-    npdata = np.array(data)
-    ptdata = torch.tensor(data).unsqueeze(0).unsqueeze(0)
-
-    generator = MackeyGenerator(batch_size=24, tmax=512, delta_t=1, device='cpu')
-
-    # -------------------------- Haar wavelet tests ------------------------------ #
-    wavelet = pywt.Wavelet('haar')
-    coeffs = pywt.wavedec(data, wavelet, level=2)
-    coeffs2 = conv_fwt(ptdata, wavelet, scales=2)
-    # print(coeffs)
-    # print(coeffs2)
-    assert len(coeffs) == len(coeffs2)
-    err = np.mean(np.abs(np.concatenate(coeffs) - torch.cat(coeffs2, -1).squeeze().numpy()))
-    print('haar coefficient error scale 2', err, ['ok' if err < 1e-4 else 'failed!'])
-
-    mackey_data_1 = torch.squeeze(generator())
-    wavelet = pywt.Wavelet('haar')
-    ptcoeff = conv_fwt(mackey_data_1.unsqueeze(1), wavelet, scales=4)
-    pycoeff = pywt.wavedec(mackey_data_1[0, :].numpy(), wavelet, level=4)
-    ptcoeff = torch.cat(ptcoeff, -1)[0, :].numpy()
-    pycoeff = np.concatenate(pycoeff)
-    err = np.mean(np.abs(pycoeff - ptcoeff))
-    print('haar coefficient error scale 4:', err, ['ok' if err < 1e-4 else 'failed!'])
-    # plt.semilogy(ptcoeff)
-    # plt.semilogy(pycoeff)
-    # plt.show()
-
-    res = conv_ifwt(conv_fwt(mackey_data_1.unsqueeze(1), wavelet), wavelet)
-    err = torch.mean(torch.abs(mackey_data_1 - res)).numpy()
-    print('haar reconstruction error scale 4:', err, ['ok' if err < 1e-4 else 'failed!'])
-    #plt.plot(res[0, :])
-    # plt.show()
-
-    # ------------------------- db2 wavelet tests --------------------------------
-    wavelet = pywt.Wavelet('db2')
-    coeffs = pywt.wavedec(data, wavelet, level=1, mode='reflect')
-    coeffs2 = conv_fwt(ptdata, wavelet, scales=1)
-    # pywt_len = 16 + wavelet.dec_len - 1
-    # print(pywt_len, pywt_len//2)
-    # print([c.shape for c in coeffs])
-    # print([c.shape for c in coeffs2])
-    ccoeffs = np.concatenate(coeffs, -1)
-    ccoeffs2 = torch.cat(coeffs2, -1).numpy()
-    err = np.mean(np.abs(ccoeffs - ccoeffs2))
-    print('db2 coefficient error scale 1:', err, ['ok' if err < 1e-4 else 'failed!'])
-    # plt.plot(coeffs)
-    # plt.plot(coeffs2.numpy())
-    # plt.show()
-    # coeffs2_lst = [c.unsqueeze(0) for c in coeffs2]
-    rec = conv_ifwt(coeffs2, wavelet)
-    err = np.mean(np.abs(npdata - rec.numpy()))
-    print('db2 reconstruction error scale 1:', err, ['ok' if err < 1e-4 else 'failed!'])
-
-    mackey_data_1 = torch.squeeze(generator())
-    wavelet = pywt.Wavelet('db5')
-    ptcoeff = conv_fwt(mackey_data_1.unsqueeze(1), wavelet, scales=3)
-    pycoeff = pywt.wavedec(mackey_data_1[0, :].numpy(), wavelet, level=3)
-    cptcoeff = torch.cat(ptcoeff, -1)[0, :]
-    cpycoeff = np.concatenate(pycoeff, -1)
-    err = np.mean(np.abs(cpycoeff - cptcoeff.numpy()))
-    print('db5 coefficient error scale 3:', err, ['ok' if err < 1e-4 else 'failed!'])  # fixme!
-    # print([c.shape for c in pycoeff])
-    # print([cp.shape for cp in cptcoeff])
-    # plt.semilogy(cpycoeff)
-    # plt.semilogy(cptcoeff.numpy())
-    # plt.show()
-
-    res = conv_ifwt(conv_fwt(mackey_data_1.unsqueeze(1), wavelet, scales=3), wavelet)
-    err = torch.mean(torch.abs(mackey_data_1 - res)).numpy()
-    print('db5 reconstruction error scale 3:', err, ['ok' if err < 1e-4 else 'failed!'])
-
-    # print([coef.shape[-1] for coef in conv_fwt(mackey_data_1.unsqueeze(1), wavelet, scales=4)])
-    # print([coef.shape[-1] for coef in pywt.wavedec(mackey_data_1[0, :].numpy(), wavelet, level=4, mode='reflect')])
-    res = conv_ifwt(conv_fwt(mackey_data_1.unsqueeze(1), wavelet, scales=4), wavelet)
-    err = torch.mean(torch.abs(mackey_data_1 - res)).numpy()
-    # plt.plot(mackey_data_1[0, :])
-    # plt.plot(res[0, :])
-    # plt.show()
-    print('db5 reconstruction error scale 4:', err, ['ok' if err < 1e-4 else 'failed!'])
-
-    # orthogonal wavelet object test
-    orthwave = OrthogonalWavelet(torch.tensor(wavelet.rec_lo))
-    res = conv_ifwt(conv_fwt(mackey_data_1.unsqueeze(1), orthwave), orthwave)
-    err = torch.mean(torch.abs(mackey_data_1 - res)).numpy()
-    print('orth reconstruction error scale 4:', err, ['ok' if err < 1e-4 else 'failed!'])
-
-    # ------------------------- 2d haar wavelet tests --------------------------------
-    import scipy.misc
-    face = np.transpose(scipy.misc.face(), [2, 0, 1]).astype(np.float32)
-    pt_face = torch.tensor(face).unsqueeze(1)
-    wavelet = pywt.Wavelet('haar')
-
-    # single level haar - 2d
-    coeff2d_pywt = pywt.dwt2(face, wavelet)
-    coeff2d = conv_fwt_2d(pt_face, wavelet, scales=1)
-    flat_lst = np.concatenate(flatten_2d_coeff_lst(coeff2d_pywt), -1)
-    flat_lst2 = torch.cat(flatten_2d_coeff_lst(coeff2d), -1)
-    err = np.mean(np.abs(flat_lst - flat_lst2.numpy()))
-    print('haar 2d coeff err,', err, ['ok' if err < 1e-4 else 'failed!'])
-
-    # single level 2d haar inverse
-    rec = conv_ifwt_2d(coeff2d, wavelet)
-    err = np.mean(np.abs(face - rec.numpy().squeeze()))
-    print('haar 2d rec err', err, ['ok' if err < 1e-4 else 'failed!'])
-
-    # single level db2 - 2d
-    wavelet = pywt.Wavelet('db2')
-    coeff2d_pywt = pywt.dwt2(face, wavelet, mode='reflect')
-    coeff2d = conv_fwt_2d(pt_face, wavelet, scales=1)
-    flat_lst = np.concatenate(flatten_2d_coeff_lst(coeff2d_pywt), -1)
-    flat_lst2 = torch.cat(flatten_2d_coeff_lst(coeff2d), -1)
-    # print([c.shape for c in flatten_2d_coeff_lst(coeff2d_pywt, flatten_tensors=False)])
-    # print([c.shape for c in flatten_2d_coeff_lst(coeff2d, flatten_tensors=False)])
-    err = np.mean(np.abs(flat_lst - flat_lst2.numpy()))
-    print('db5 2d coeff err,', err, ['ok' if err < 1e-4 else 'failed!'])
-
-    # single level db2 - 2d inverse.
-    rec = conv_ifwt_2d(coeff2d, wavelet)
-    err = np.mean(np.abs(face - rec.numpy().squeeze()))
-    print('db5 2d rec err,', err, ['ok' if err < 1e-4 else 'failed!'])
-
-    # multi level haar - 2d
-    wavelet = pywt.Wavelet('haar')
-    coeff2d_pywt = pywt.wavedec2(face, wavelet, mode='reflect', level=5)
-    coeff2d = conv_fwt_2d(pt_face, wavelet, scales=5)
-    flat_lst = np.concatenate(flatten_2d_coeff_lst(coeff2d_pywt), -1)
-    flat_lst2 = torch.cat(flatten_2d_coeff_lst(coeff2d), -1)
-    # print([c.shape for c in flatten_2d_coeff_lst(coeff2d_pywt, flatten_tensors=False)])
-    # print([list(c.shape) for c in flatten_2d_coeff_lst(coeff2d, flatten_tensors=False)])
-    err = np.mean(np.abs(flat_lst - flat_lst2.numpy()))
-    # plt.plot(flat_lst); plt.show()
-    # plt.plot(flat_lst2); plt.show()
-    print('haar 2d scale 5 coeff err,', err, ['ok' if err < 1e-4 else 'failed!'])
-
-    # inverse multi level Harr - 2d
-    rec = conv_ifwt_2d(coeff2d, wavelet)
-    err = np.mean(np.abs(face - rec.numpy().squeeze()))
-    print('haar 2d scale 5 rec err,', err, ['ok' if err < 1e-4 else 'failed!'])
-
-    # max db5
-    wavelet = pywt.Wavelet('db5')
-    coeff2d = conv_fwt_2d(pt_face, wavelet)
-    rec = conv_ifwt_2d(coeff2d, wavelet)
-    err = np.mean(np.abs(face - rec.numpy().squeeze()))
-    print('db 5 scale max rec err,', err, ['ok' if err < 1e-4 else 'failed!'])
