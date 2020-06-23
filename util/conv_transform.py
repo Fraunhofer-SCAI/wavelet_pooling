@@ -7,18 +7,18 @@ import pywt
 # import matplotlib.pyplot as plt
 
 
-def get_filter_tensors(wavelet, flip):
+def get_filter_tensors(wavelet, flip, device):
     def create_tensor(filter):
         if flip:
             if type(filter) is torch.Tensor:
-                return filter.flip(-1).unsqueeze(0)
+                return filter.flip(-1).unsqueeze(0).to(device)
             else:
-                return torch.tensor(filter[::-1]).unsqueeze(0)
+                return torch.tensor(filter[::-1], device=device).unsqueeze(0)
         else:
             if type(filter) is torch.Tensor:
-                return filter.unsqueeze(0)
+                return filter.unsqueeze(0).to(device)
             else:
-                return torch.tensor(filter).unsqueeze(0)
+                return torch.tensor(filter, device=device).unsqueeze(0)
     dec_lo, dec_hi, rec_lo, rec_hi = wavelet.filter_bank
     dec_lo = create_tensor(dec_lo)
     dec_hi = create_tensor(dec_hi)
@@ -140,7 +140,8 @@ def conv_fwt_2d(data, wavelet, scales: int = None):
     # filt_len = len(dec_lo)
     # dec_lo = torch.tensor(dec_lo[::-1]).unsqueeze(0)
     # dec_hi = torch.tensor(dec_hi[::-1]).unsqueeze(0)
-    dec_lo, dec_hi, _, _ = get_filter_tensors(wavelet, flip=True)
+    dec_lo, dec_hi, _, _ = get_filter_tensors(wavelet, flip=True,
+                                              device=data.device)
     filt_len = dec_lo.shape[-1]
 
     dec_filt = construct_2d_filt(lo=dec_lo, hi=dec_hi)
@@ -166,7 +167,8 @@ def conv_ifwt_2d(coeffs, wavelet):
     # filt_len = len(rec_lo)
     # rec_lo = torch.tensor(rec_lo).unsqueeze(0)
     # rec_hi = torch.tensor(rec_hi).unsqueeze(0)
-    _, _, rec_lo, rec_hi = get_filter_tensors(wavelet, flip=False)
+    _, _, rec_lo, rec_hi = get_filter_tensors(
+        wavelet, flip=False, device=flatten_2d_coeff_lst(coeffs)[0].device)
     filt_len = rec_lo.shape[-1]
     rec_filt = construct_2d_filt(rec_lo, rec_hi)
 

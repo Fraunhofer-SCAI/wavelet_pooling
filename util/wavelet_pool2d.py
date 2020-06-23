@@ -10,9 +10,16 @@ class StaticWaveletPool2d(nn.Module):
 
     def forward(self, img):
         fold_channels = torch.reshape(img, [img.shape[0]*img.shape[1],
-                                            img.shape[2], img.shape[3])
-        fold_channels = img.unsqueeze(1)
-        coeffs = conv_fwt_2d(fold_channels, self.wavelet, scales=2)
-        rec = conv_ifwt_2d(coeffs)
-        pool = conv_ifwt_2d(coeffs[-1])
-        return img
+                                            img.shape[2], img.shape[3]])
+        fold_channels = fold_channels.unsqueeze(1)
+        coeffs = conv_fwt_2d(fold_channels, wavelet=self.wavelet, scales=2)
+        # rec = conv_ifwt_2d(coeffs, wavelet=self.wavelet)
+        # rec = rec.reshape(img.shape)
+        # err = torch.mean(torch.abs(img - rec))
+        # print(err)
+        pool = conv_ifwt_2d(coeffs[:-1], wavelet=self.wavelet)
+        pool = pool.reshape([img.shape[0], img.shape[1],
+                             pool.shape[-2], pool.shape[-1]])
+        # remove wavelet padding.
+        pool = pool[..., :(img.shape[-2]//2), :(img.shape[-1]//2)]
+        return pool
