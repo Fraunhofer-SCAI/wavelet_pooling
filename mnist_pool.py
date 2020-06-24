@@ -8,19 +8,35 @@ from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 from util.wavelet_pool2d import StaticWaveletPool2d
 # Test set: Average loss: 0.0295, Accuracy: 9905/10000 (99%)
-# Wavelet Test set: Average loss: 0.0443, Accuracy: 9868/10000 (99%)
+# Wavelet Test set: Test set: Average loss: 0.0400, Accuracy: 9898/10000 (99%)
 # maxPool: Test set: Average loss: 0.0216, Accuracy: 9944/10000 (99%)
+# avgPool: 9865
 
 
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
+        pool_type = 'wavelet'
+
+        def get_pool(pool_type):
+            if pool_type == 'wavelet':
+                print('wavelet pool')
+                return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'))
+            elif pool_type == 'max':
+                print('max pool')
+                return nn.MaxPool2d(2)
+            elif pool_type == 'avg':
+                print('avg pool')
+                return nn.AvgPool2d(2)
+            else:
+                raise NotImplementedError
+
         self.conv1 = nn.Conv2d(1, 20, 5, padding=0, stride=1)
         self.norm1 = nn.BatchNorm2d(20)
-        self.pool1 = StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'))
+        self.pool1 = get_pool(pool_type)
         self.conv2 = nn.Conv2d(20, 50, 5, padding=0, stride=1)
         self.norm2 = nn.BatchNorm2d(50)
-        self.pool2 = StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'))
+        self.pool2 = get_pool(pool_type)
         self.conv3 = nn.Conv2d(50, 500, 4, padding=0, stride=1)
         self.relu = nn.ReLU()
         self.conv4 = nn.Conv2d(500, 10, 1, padding=0, stride=1)
@@ -28,11 +44,11 @@ class Net(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
-        x = self.norm1(x)
         x = self.pool1(x)
+        x = self.norm1(x)
         x = self.conv2(x)
-        x = self.norm2(x)
         x = self.pool2(x)
+        x = self.norm2(x)
         x = self.conv3(x)
         x = self.relu(x)
         x = self.conv4(x)
@@ -50,10 +66,16 @@ def train(args, model, device, train_loader, optimizer, epoch):
         loss = F.nll_loss(output, target)
         loss.backward()
         optimizer.step()
+
         if batch_idx % args.log_interval == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
+
+            for param_group in optimizer.param_groups:
+                lr = param_group['lr']
+
+            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f} \
+                  \t lr: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item()))
+                100. * batch_idx / len(train_loader), loss.item(), lr))
 
 
 def test(model, device, test_loader):
@@ -64,18 +86,15 @@ def test(model, device, test_loader):
         for data, target in test_loader:
             data, target = data.to(device), target.to(device)
             output = model(data)
-            # sum up batch loss
-            test_loss += F.nll_loss(output, target, reduction='sum').item()
-            # get the index of the max log-probability
-            pred = output.argmax(dim=1, keepdim=True)
+            test_loss += F.nll_loss(output, target, reduction='sum').item()  # sum up batch loss
+            pred = output.argmax(dim=1, keepdim=True)  # get the index of the max log-probability
             correct += pred.eq(target.view_as(pred)).sum().item()
 
     test_loss /= len(test_loader.dataset)
 
-    print(
-        '\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-            test_loss, correct, len(test_loader.dataset),
-            100. * correct / len(test_loader.dataset)))
+    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
+        test_loss, correct, len(test_loader.dataset),
+        100. * correct / len(test_loader.dataset)))
 
 
 def main():

@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
-from util.conv_transform import conv_fwt_2d, conv_ifwt_2d
+from util.conv_transform import conv_fwt_2d, conv_ifwt_2d, get_filter_tensors
+from util.conv_transform import flatten_2d_coeff_lst, construct_2d_filt
 
 
 class StaticWaveletPool2d(nn.Module):
@@ -21,5 +22,7 @@ class StaticWaveletPool2d(nn.Module):
         pool = pool.reshape([img.shape[0], img.shape[1],
                              pool.shape[-2], pool.shape[-1]])
         # remove wavelet padding.
-        pool = pool[..., :(img.shape[-2]//2), :(img.shape[-1]//2)]
+        # pool = pool[..., :(img.shape[-2]//2), :(img.shape[-1]//2)]
+        rescale = torch.mean(img)/torch.mean(pool)
+        pool = rescale*pool
         return pool
