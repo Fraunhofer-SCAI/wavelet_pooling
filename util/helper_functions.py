@@ -91,7 +91,8 @@ def progress_bar(current, total, msg=None):
     #     string += '\r'
     # else:
     #     string += '\n'
-    print("".join(string))
+    if current+1 == total:
+        print("".join(string))
 
 def format_time(seconds):
     days = int(seconds / 3600/24)
