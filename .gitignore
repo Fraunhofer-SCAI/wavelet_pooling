@@ -1,6 +1,9 @@
 .vscode/
 data/
 checkpoint/
+checkpoint_wavelet/
+checkpoint_max/
+checkpoint_avg/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

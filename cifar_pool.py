@@ -1,8 +1,8 @@
 '''Train CIFAR10 with PyTorch.'''
-import pywt
+# import pywt
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
+# import torch.nn.functional as F
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 import torchvision
@@ -10,7 +10,7 @@ import torchvision.transforms as transforms
 import os
 import argparse
 from util.helper_functions import progress_bar
-from util.wavelet_pool2d import StaticWaveletPool2d
+# from util.wavelet_pool2d import StaticWaveletPool2d
 from util.cifar_densenet import densenet_cifar
 
 
@@ -131,12 +131,12 @@ def test(epoch):
             'acc': acc,
             'epoch': epoch,
         }
-        if not os.path.isdir('checkpoint'):
-            os.mkdir('checkpoint')
-        torch.save(state, './checkpoint/ckpt.pth')
+        if not os.path.isdir('checkpoint_' + args.pool):
+            os.mkdir('checkpoint_' + args.pool)
+        torch.save(state, './checkpoint_' + args.pool + '/ckpt.pth')
         best_acc = acc
 
 
-for epoch in range(start_epoch, start_epoch+200):
+for epoch in range(start_epoch, start_epoch+1): #+200):
     train(epoch)
     test(epoch)
