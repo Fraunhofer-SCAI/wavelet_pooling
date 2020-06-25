@@ -57,13 +57,14 @@ def progress_bar(current, total, msg=None):
     cur_len = int(TOTAL_BAR_LENGTH*current/total)
     rest_len = int(TOTAL_BAR_LENGTH - cur_len) - 1
 
-    sys.stdout.write(' [')
-    for i in range(cur_len):
-        sys.stdout.write('=')
-    sys.stdout.write('>')
-    for i in range(rest_len):
-        sys.stdout.write('.')
-    sys.stdout.write(']')
+    string = []
+    # string += ' ['
+    # for i in range(cur_len):
+    #     string += '='
+    # string += '>'
+    # for i in range(rest_len):
+    #     string += '.'
+    # string += ']'
 
     cur_time = time.time()
     step_time = cur_time - last_time
@@ -77,20 +78,20 @@ def progress_bar(current, total, msg=None):
         L.append(' | ' + msg)
 
     msg = ''.join(L)
-    sys.stdout.write(msg)
-    for i in range(term_width-int(TOTAL_BAR_LENGTH)-len(msg)-3):
-        sys.stdout.write(' ')
+    string += msg
+    # for i in range(term_width-int(TOTAL_BAR_LENGTH)-len(msg)-3):
+    #     string += ' '
 
-    # Go back to the center of the bar.
-    for i in range(term_width-int(TOTAL_BAR_LENGTH/2)+2):
-        sys.stdout.write('\b')
-    sys.stdout.write(' %d/%d ' % (current+1, total))
+    # # Go back to the center of the bar.
+    # for i in range(term_width-int(TOTAL_BAR_LENGTH/2)+2):
+    #     string += '\b'
+    string += ' %d/%d ' % (current+1, total)
 
-    if current < total-1:
-        sys.stdout.write('\r')
-    else:
-        sys.stdout.write('\n')
-    sys.stdout.flush()
+    # if current < total-1:
+    #     string += '\r'
+    # else:
+    #     string += '\n'
+    print("".join(string))
 
 def format_time(seconds):
     days = int(seconds / 3600/24)
