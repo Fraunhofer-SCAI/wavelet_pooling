@@ -4,6 +4,10 @@ checkpoint/
 checkpoint_wavelet/
 checkpoint_max/
 checkpoint_avg/
+out/
+
+# queue files
+*.swp
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
