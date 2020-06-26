@@ -125,16 +125,16 @@ def construct_2d_filt(lo, hi):
     return filt
 
 
-def conv_fwt_2d(data, wavelet, scales: int = None):
+def conv_fwt_2d(data, wavelet, scales: int = None) -> list:
     """ Non seperated two dimensional wavelet transform.
 
     Args:
-        data ([type]): [batch_size, 1, height, width]
+        data (torch.tensor): [batch_size, 1, height, width]
         wavelet ([type]): [description]
         scales (int, optional): [description]. Defaults to None.
 
     Returns:
-        [type]: [description]
+        [list]: List containing the wavelet coefficients.
     """
     # dec_lo, dec_hi, _, _ = wavelet.filter_bank
     # filt_len = len(dec_lo)
@@ -210,8 +210,20 @@ def conv_ifwt_2d(coeffs, wavelet):
     return res_ll
 
 
-def conv_fwt(data, wavelet, scales: int = None):
-    dec_lo, dec_hi, _, _ = get_filter_tensors(wavelet, flip=True)
+def conv_fwt(data, wavelet, scales: int = None) -> list:
+    """Compute the analysis (forward) 1d fast wavelet transform."
+
+    Args:
+        data (torch.tensor): Input time series of shape [batch_size, 1, time]
+        wavelet (util.WaveletFilter): The wavelet object to be used.
+        scales (int, optional): The scale level to be computed.
+                                Defaults to None.
+
+    Returns:
+        [list]: A list containing the wavelet coefficients.
+    """
+    dec_lo, dec_hi, _, _ = get_filter_tensors(wavelet, flip=True,
+                                              device=data.device)
     filt_len = dec_lo.shape[-1]
     # dec_lo = torch.tensor(dec_lo[::-1]).unsqueeze(0)
     # dec_hi = torch.tensor(dec_hi[::-1]).unsqueeze(0)
@@ -232,12 +244,13 @@ def conv_fwt(data, wavelet, scales: int = None):
     return result_lst[::-1]
 
 
-def conv_ifwt(coeffs, wavelet):
+def conv_ifwt(coeffs: list, wavelet) -> torch.tensor:
     # _, _, rec_lo, rec_hi = wavelet.filter_bank
     # filt_len = len(rec_lo)
     # rec_lo = torch.tensor(rec_lo).unsqueeze(0)
     # rec_hi = torch.tensor(rec_hi).unsqueeze(0)
-    _, _, rec_lo, rec_hi = get_filter_tensors(wavelet, flip=False)
+    _, _, rec_lo, rec_hi = get_filter_tensors(wavelet, flip=False,
+                                              device=coeffs[-1].device)
     filt_len = rec_lo.shape[-1]
 
     filt = torch.stack([rec_lo, rec_hi], 0)

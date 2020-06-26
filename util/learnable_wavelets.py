@@ -15,7 +15,7 @@ class WaveletFilter(ABC):
     @property
     @abstractmethod
     def filter_bank(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def wavelet_loss(self):
@@ -24,11 +24,11 @@ class WaveletFilter(ABC):
 
     @abstractmethod
     def __len__(self):
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def parameters(self):
-        pass
+        raise NotImplementedError
 
     def alias_cancellation_loss(self) -> [torch.Tensor, torch.Tensor,
                                           torch.Tensor]:
@@ -193,7 +193,7 @@ if __name__ == '__main__':
     init = torch.tensor(pywt_wave.dec_lo)
     # init = torch.zeros(init.shape).uniform_()
     orth_wave = OrthogonalWavelet(init)
-    orth_wave.eval_wavelet_loss()
+    orth_wave.wavelet_loss()
     print('orth-harbo', orth_wave.filt_bank_orthogonality_loss().numpy())
     print('orth-strang', orth_wave.rec_lo_orthogonality_loss().numpy())
     # print('rec_lo', pywt_wave.rec_lo, orth_wave.rec_lo)
