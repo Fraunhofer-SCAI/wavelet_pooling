@@ -24,18 +24,31 @@ class Net(nn.Module):
                 print('wavelet pool')
                 return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'))
             elif pool_type == 'adaptive_wavelet':
+                # wavelet = ProductFilter(
+                #     torch.tensor([0., 0., 0.7071067811865476,
+                #                   0.7071067811865476, 0., 0.],
+                #                  requires_grad=True),
+                #     torch.tensor([0., 0., -0.7071067811865476,
+                #                   0.7071067811865476, 0., 0.],
+                #                  requires_grad=True),
+                #     torch.tensor([0., 0., 0.7071067811865476,
+                #                   0.7071067811865476, 0., 0.],
+                #                  requires_grad=True),
+                #     torch.tensor([0., 0., 0.7071067811865476,
+                #                   -0.7071067811865476, 0., 0.],
+                #                  requires_grad=True))
                 wavelet = ProductFilter(
-                    torch.tensor([0., 0., 0.7071067811865476,
-                                  0.7071067811865476, 0., 0.],
+                    torch.tensor([0.7071067811865476,
+                                  0.7071067811865476],
                                  requires_grad=True),
-                    torch.tensor([0., 0., -0.7071067811865476,
-                                  0.7071067811865476, 0., 0.],
+                    torch.tensor([-0.7071067811865476,
+                                  0.7071067811865476],
                                  requires_grad=True),
-                    torch.tensor([0., 0., 0.7071067811865476,
-                                  0.7071067811865476, 0., 0.],
+                    torch.tensor([0.7071067811865476,
+                                  0.7071067811865476],
                                  requires_grad=True),
-                    torch.tensor([0., 0., 0.7071067811865476,
-                                  -0.7071067811865476, 0., 0.],
+                    torch.tensor([0.7071067811865476,
+                                  -0.7071067811865476],
                                  requires_grad=True))
                 return AdaptiveWaveletPool2d(wavelet=wavelet)
             elif pool_type == 'max':
@@ -182,12 +195,14 @@ def main():
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
         train(args, model, device, train_loader, optimizer, epoch)
+        print('wvl loss:', model.get_wavelet_loss())
         test(model, device, test_loader)
         scheduler.step()
 
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")
 
+    print('done')
 
 if __name__ == '__main__':
     main()
