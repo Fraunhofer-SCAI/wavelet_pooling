@@ -1,13 +1,11 @@
 import torch
 import torch.nn as nn
-from util.conv_transform import conv_fwt_2d, conv_ifwt_2d, get_filter_tensors
-from util.conv_transform import flatten_2d_coeff_lst, construct_2d_filt
+from abc import ABC
+from util.conv_transform import conv_fwt_2d, conv_ifwt_2d
 
 
-class StaticWaveletPool2d(nn.Module):
-    def __init__(self, wavelet):
-        super().__init__()
-        self.wavelet = wavelet
+class WaveletPool2d(nn.Module):
+    """ Interface class for wavelet pooling objects."""
 
     def forward(self, img):
         fold_channels = torch.reshape(img, [img.shape[0]*img.shape[1],
@@ -22,7 +20,27 @@ class StaticWaveletPool2d(nn.Module):
         pool = pool.reshape([img.shape[0], img.shape[1],
                              pool.shape[-2], pool.shape[-1]])
         # remove wavelet padding.
-        # pool = pool[..., :(img.shape[-2]//2), :(img.shape[-1]//2)]
+        pool = pool[..., :(img.shape[-2]//2), :(img.shape[-1]//2)]
         rescale = torch.mean(img)/torch.mean(pool)
         pool = rescale*pool
         return pool
+
+
+class StaticWaveletPool2d(WaveletPool2d):
+    def __init__(self, wavelet):
+        super().__init__()
+        self.wavelet = wavelet
+
+
+class AdaptiveWaveletPool2d(WaveletPool2d):
+    def __init__(self, wavelet):
+        super().__init__()
+        self.wavelet = wavelet
+        assert self.wavelet.rec_lo.requires_grad is True, \
+            'adaptive pooling requires grads.'
+        assert self.wavelet.rec_hi.requires_grad is True
+        assert self.wavelet.dec_lo.requires_grad is True
+        assert self.wavelet.dec_hi.requires_grad is True
+
+    def get_wavelet_loss(self):
+        return self.wavelet.wavelet_loss()

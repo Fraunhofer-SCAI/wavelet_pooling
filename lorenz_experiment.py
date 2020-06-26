@@ -138,25 +138,25 @@ for s in range(steps):
               'prl', prl.detach().cpu().numpy())
 
 
-wave1d_8_freq = conv_fwt(mackey_data_1.unsqueeze(1), wavelet, scale=6)
+wave1d_8_freq = conv_fwt(mackey_data_1.unsqueeze(1), wavelet, scales=6)
 
 c_low = zero_by_method(wave1d_8_freq)
 
 rec_low = conv_ifwt(c_low, wavelet)
-print('rec_low error', np.sum(np.abs(rec_low[0, 0, 0, :].detach().cpu().numpy()
+print('rec_low error', np.sum(np.abs(rec_low[0, :].detach().cpu().numpy()
                                      - mackey_data_1[0, :].cpu().numpy())))
 
 plt.title('Optimized Haar')
-plt.plot(rec_low[0, 0, 0, :].detach().cpu().numpy())
+plt.plot(rec_low[0, :].detach().cpu().numpy())
 plt.plot(mackey_data_1[0, :].cpu().numpy())
-plt.plot(np.abs(rec_low[0, 0, 0, :].detach().cpu().numpy() - mackey_data_1[0, :].cpu().numpy()))
+plt.plot(np.abs(rec_low[0, :].detach().cpu().numpy() - mackey_data_1[0, :].cpu().numpy()))
 # plt.savefig('optimized_haar')
 # tikz.save('optimized_haar.tex', standalone=True)
 plt.show()
 
 plt.title('Optimized haar coefficients')
-plt.semilogy(np.abs(torch.cat(wave1d_8_freq, -1)[0, 0, 0, :].detach().cpu().numpy()))
-plt.semilogy(np.abs(torch.cat(c_low, -1)[0, 0, 0, :].detach().cpu().numpy()), '.')
+plt.semilogy(np.abs(torch.cat(wave1d_8_freq, -1)[0, :].detach().cpu().numpy()))
+plt.semilogy(np.abs(torch.cat(c_low, -1)[0, :].detach().cpu().numpy()), '.')
 # tikz.save('optimized_haar_coefficients.tex', standalone=True)
 plt.show()
 

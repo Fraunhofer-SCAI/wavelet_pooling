@@ -19,16 +19,16 @@ class WaveletFilter(ABC):
 
     @abstractmethod
     def wavelet_loss(self):
-        print('al', self.alias_cancellation_loss()[0].numpy())
-        print('pr', self.perfect_reconstruction_loss()[0].numpy())
+        return self.alias_cancellation_loss() \
+               + self.perfect_reconstruction_loss()
 
     @abstractmethod
     def __len__(self):
         raise NotImplementedError
 
-    @abstractmethod
-    def parameters(self):
-        raise NotImplementedError
+    # @abstractmethod
+    # def parameters(self):
+    #     raise NotImplementedError
 
     def alias_cancellation_loss(self) -> [torch.Tensor, torch.Tensor,
                                           torch.Tensor]:
@@ -92,20 +92,21 @@ class WaveletFilter(ABC):
         return torch.sum(errs), p_test, two_at_power_zero
 
 
-class ProductFilter(WaveletFilter):
+class ProductFilter(WaveletFilter, torch.nn.Module):
     def __init__(self, dec_lo: torch.Tensor, dec_hi: torch.Tensor,
                  rec_lo: torch.Tensor, rec_hi: torch.Tensor):
-        self.dec_lo = dec_lo
-        self.dec_hi = dec_hi
-        self.rec_lo = rec_lo
-        self.rec_hi = rec_hi
+        super().__init__()
+        self.dec_lo = torch.nn.Parameter(dec_lo)
+        self.dec_hi = torch.nn.Parameter(dec_hi)
+        self.rec_lo = torch.nn.Parameter(rec_lo)
+        self.rec_hi = torch.nn.Parameter(rec_hi)
 
     @property
     def filter_bank(self):
         return self.dec_lo, self.dec_hi, self.rec_lo, self.rec_hi
 
-    def parameters(self):
-        return [self.dec_lo, self.dec_hi, self.rec_lo, self.rec_hi]
+    # def parameters(self):
+    #     return [self.dec_lo, self.dec_hi, self.rec_lo, self.rec_hi]
 
     def __len__(self):
         return self.dec_lo.shape[-1]
@@ -118,9 +119,9 @@ class ProductFilter(WaveletFilter):
         return self.product_filter_loss()
 
 
-class OrthogonalWavelet(WaveletFilter):
+class OrthogonalWavelet(WaveletFilter, torch.nn.Module):
     def __init__(self, init_tensor: torch.Tensor):
-        self.dec_lo = init_tensor
+        self.dec_lo = torch.nn.Parameter(init_tensor)
         m1 = torch.tensor([-1], device=self.dec_lo.device,
                           dtype=self.dec_lo.dtype)
         length = self.dec_lo.shape[0]
@@ -143,8 +144,8 @@ class OrthogonalWavelet(WaveletFilter):
     def cpu(self):
         self.dec_lo.cpu()
 
-    def parameters(self):
-        return [self.dec_lo]
+    # def parameters(self):
+    #     return [self.dec_lo]
 
     @property
     def filter_bank(self):

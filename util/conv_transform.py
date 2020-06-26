@@ -10,12 +10,12 @@ import pywt
 def get_filter_tensors(wavelet, flip, device):
     def create_tensor(filter):
         if flip:
-            if type(filter) is torch.Tensor:
+            if isinstance(filter, torch.Tensor):
                 return filter.flip(-1).unsqueeze(0).to(device)
             else:
                 return torch.tensor(filter[::-1], device=device).unsqueeze(0)
         else:
-            if type(filter) is torch.Tensor:
+            if isinstance(filter, torch.Tensor):
                 return filter.unsqueeze(0).to(device)
             else:
                 return torch.tensor(filter, device=device).unsqueeze(0)

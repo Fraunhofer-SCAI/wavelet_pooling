@@ -6,7 +6,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
-from util.wavelet_pool2d import StaticWaveletPool2d
+from util.wavelet_pool2d import StaticWaveletPool2d, AdaptiveWaveletPool2d
+from util.learnable_wavelets import ProductFilter
 # Test set: Average loss: 0.0295, Accuracy: 9905/10000 (99%)
 # Wavelet Test set: Test set: Average loss: 0.0400, Accuracy: 9898/10000 (99%)
 # maxPool: Test set: Average loss: 0.0216, Accuracy: 9944/10000 (99%)
@@ -16,12 +17,27 @@ from util.wavelet_pool2d import StaticWaveletPool2d
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        pool_type = 'wavelet'
+        self.pool_type = 'adaptive_wavelet'
 
         def get_pool(pool_type):
             if pool_type == 'wavelet':
                 print('wavelet pool')
                 return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'))
+            elif pool_type == 'adaptive_wavelet':
+                wavelet = ProductFilter(
+                    torch.tensor([0., 0., 0.7071067811865476,
+                                  0.7071067811865476, 0., 0.],
+                                 requires_grad=True),
+                    torch.tensor([0., 0., -0.7071067811865476,
+                                  0.7071067811865476, 0., 0.],
+                                 requires_grad=True),
+                    torch.tensor([0., 0., 0.7071067811865476,
+                                  0.7071067811865476, 0., 0.],
+                                 requires_grad=True),
+                    torch.tensor([0., 0., 0.7071067811865476,
+                                  -0.7071067811865476, 0., 0.],
+                                 requires_grad=True))
+                return AdaptiveWaveletPool2d(wavelet=wavelet)
             elif pool_type == 'max':
                 print('max pool')
                 return nn.MaxPool2d(2)
@@ -33,13 +49,17 @@ class Net(nn.Module):
 
         self.conv1 = nn.Conv2d(1, 20, 5, padding=0, stride=1)
         self.norm1 = nn.BatchNorm2d(20)
-        self.pool1 = get_pool(pool_type)
+        self.pool1 = get_pool(self.pool_type)
         self.conv2 = nn.Conv2d(20, 50, 5, padding=0, stride=1)
         self.norm2 = nn.BatchNorm2d(50)
-        self.pool2 = get_pool(pool_type)
+        self.pool2 = get_pool(self.pool_type)
         self.conv3 = nn.Conv2d(50, 500, 4, padding=0, stride=1)
         self.relu = nn.ReLU()
-        self.conv4 = nn.Conv2d(500, 10, 1, padding=0, stride=1)
+        self.flatten = nn.Flatten(1)
+        if self.pool_type == 'adaptive_wavelet':
+            self.lin = nn.Linear(500, 10)
+        else:
+            self.lin = nn.Linear(500, 10)
         self.norm4 = nn.BatchNorm2d(10)
 
     def forward(self, x):
@@ -51,10 +71,18 @@ class Net(nn.Module):
         x = self.norm2(x)
         x = self.conv3(x)
         x = self.relu(x)
-        x = self.conv4(x)
-        x = self.norm4(x)
+        x = self.flatten(x)
+        x = self.lin(x)
+        # x = self.norm4(x)
         output = F.log_softmax(x, dim=1)
-        return output.squeeze()
+        return output
+
+    def get_wavelet_loss(self):
+        if self.pool_type == 'adaptive_wavelet':
+            return self.pool1.wavelet.wavelet_loss() + \
+                   self.pool2.wavelet.wavelet_loss()
+        else:
+            return 0.
 
 
 def train(args, model, device, train_loader, optimizer, epoch):
@@ -64,6 +92,12 @@ def train(args, model, device, train_loader, optimizer, epoch):
         optimizer.zero_grad()
         output = model(data)
         loss = F.nll_loss(output, target)
+        if model.pool_type == 'adaptive_wavelet':
+            wvl = model.get_wavelet_loss()
+            loss += wvl
+        else:
+            wvl = 0.
+
         loss.backward()
         optimizer.step()
 
@@ -73,9 +107,9 @@ def train(args, model, device, train_loader, optimizer, epoch):
                 lr = param_group['lr']
 
             print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f} \
-                  \t lr: {:.6f}'.format(
+                  \t lr: {:.6f} \t wvl: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.item(), lr))
+                100. * batch_idx / len(train_loader), loss.item(), lr, wvl))
 
 
 def test(model, device, test_loader):
@@ -142,6 +176,7 @@ def main():
         batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
     model = Net().to(device)
+    print('init wvl loss:', model.get_wavelet_loss())
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
