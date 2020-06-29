@@ -17,7 +17,7 @@ from util.learnable_wavelets import ProductFilter
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.pool_type = 'adaptive_wavelet'
+        self.pool_type = 'wavelet'
 
         def get_pool(pool_type):
             if pool_type == 'wavelet':
