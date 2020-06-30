@@ -20,6 +20,25 @@ class WaveletPool2d(nn.Module):
         pool = pool.reshape([img.shape[0], img.shape[1],
                              pool.shape[-2], pool.shape[-1]])
         # remove wavelet padding.
+        padr = 0
+        padl = 0
+        padt = 0
+        padb = 0
+        filt_len = len(self.wavelet.dec_lo)
+        if filt_len > 2:
+            padr += (2 * filt_len - 3) // 2
+            padl += (2 * filt_len - 3) // 2
+            padt += (2 * filt_len - 3) // 2
+            padb += (2 * filt_len - 3) // 2
+        # print('pad', padr, padl, padt, padb)
+        if padt > 0:
+            pool = pool[..., padt:, :]
+        if padb > 0:
+            pool = pool[..., :-padb, :]
+        if padl > 0:
+            pool = pool[..., padl:]
+        if padr > 0:
+            pool = pool[..., :-padr]
         # pool = pool[..., :(img.shape[-2]//2), :(img.shape[-1]//2)]
         rescale = torch.mean(img)/torch.mean(pool)
         pool = rescale*pool

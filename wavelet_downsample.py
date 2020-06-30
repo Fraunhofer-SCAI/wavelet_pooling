@@ -1,31 +1,43 @@
 import pywt
 import numpy as np
 import torch
-from util.conv_transform import conv_fwt_2d, conv_ifwt_2d
+from util.conv_transform import conv_fwt_2d, conv_ifwt_2d, get_pad, flatten_2d_coeff_lst
 from scipy import misc
 import matplotlib.pyplot as plt
 
 
-face = misc.face()
+face = misc.face() #[128:(512+128), 256:(512+256)]
 face = face / 255.
 face = torch.tensor(face.astype(np.float32))
 face = face.unsqueeze(0)
 face = face.permute([3, 0, 1, 2])
-
-wavelet = pywt.Wavelet('db38')
+wavelet = pywt.Wavelet('db12')
 coeff = conv_fwt_2d(face, wavelet=wavelet, scales=2)
+print([c.shape for c in flatten_2d_coeff_lst(coeff)])
 down_coeff = coeff[:-1]
+print([c.shape for c in flatten_2d_coeff_lst(down_coeff)])
 down_face = conv_ifwt_2d(down_coeff, wavelet=wavelet)
 # TODO: Fix the padding problem!!!
-pad_lr = down_face.shape[-1] - face.shape[-1]//2
-pad_tb = down_face.shape[-2] - face.shape[-2]//2
-# pad_lr = 74
-# pad_tb = 74
-print('pad', pad_lr, pad_tb)
-if pad_lr > 0:
-    down_face = down_face[..., :, pad_lr//2:-pad_lr//2]
-if pad_tb > 0:
-    down_face = down_face[..., pad_tb//2:-pad_tb//2, :]
+filt_len = len(wavelet.dec_lo)
+
+padr = 0
+padl = 0
+padt = 0
+padb = 0
+if filt_len > 2:
+    padr += (2 * filt_len - 3) // 2
+    padl += (2 * filt_len - 3) // 2
+    padt += (2 * filt_len - 3) // 2
+    padb += (2 * filt_len - 3) // 2
+print('pad', padr, padl, padt, padb)
+if padt > 0:
+    down_face = down_face[..., padt:, :]
+if padb > 0:
+    down_face = down_face[..., :-padb, :]
+if padl > 0:
+    down_face = down_face[..., padl:]
+if padr > 0:
+    down_face = down_face[..., :-padr]
 rescale = torch.mean(face)/torch.mean(down_face)
 down_face = rescale*down_face
 # down_face = down_face/torch.max(torch.abs(down_face))

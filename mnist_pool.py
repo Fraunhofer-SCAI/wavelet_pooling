@@ -17,7 +17,7 @@ from util.learnable_wavelets import ProductFilter
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.pool_type = 'wavelet'
+        self.pool_type = 'adaptive_wavelet'
 
         def get_pool(pool_type):
             if pool_type == 'wavelet':
@@ -38,17 +38,17 @@ class Net(nn.Module):
                 #                   -0.7071067811865476, 0., 0.],
                 #                  requires_grad=True))
                 wavelet = ProductFilter(
-                    torch.tensor([0.7071067811865476,
-                                  0.7071067811865476],
+                    torch.tensor([0, 0, 0.7071067811865476,
+                                  0.70710678118654760, 0, 0],
                                  requires_grad=True),
-                    torch.tensor([-0.7071067811865476,
-                                  0.7071067811865476],
+                    torch.tensor([0, 0, -0.7071067811865476,
+                                  0.7071067811865476, 0, 0],
                                  requires_grad=True),
-                    torch.tensor([0.7071067811865476,
-                                  0.7071067811865476],
+                    torch.tensor([0, 0, 0.7071067811865476,
+                                  0.7071067811865476, 0, 0],
                                  requires_grad=True),
-                    torch.tensor([0.7071067811865476,
-                                  -0.7071067811865476],
+                    torch.tensor([0, 0, 0.7071067811865476,
+                                  -0.7071067811865476, 0, 0],
                                  requires_grad=True))
                 return AdaptiveWaveletPool2d(wavelet=wavelet)
             elif pool_type == 'max':
@@ -77,10 +77,14 @@ class Net(nn.Module):
 
     def forward(self, x):
         x = self.conv1(x)
-        x = self.pool1(x)
+        # print(x.shape)
+        # x = self.pool1(x)
+        # print(x.shape)
         x = self.norm1(x)
         x = self.conv2(x)
+        # print(x.shape)
         x = self.pool2(x)
+        # print(x.shape)
         x = self.norm2(x)
         x = self.conv3(x)
         x = self.relu(x)

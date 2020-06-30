@@ -77,7 +77,7 @@ def fwt_pad(data, wavelet):
 
     # print('fwt pad', data.shape, pad)
     data_pad = torch.nn.functional.pad(data, [padl, padr],
-                                       mode='reflect')
+                                       mode='constant') #mode='reflect')
     return data_pad
 
 
@@ -85,7 +85,7 @@ def fwt_pad2d(data, wavelet):
     padb, padt = get_pad(data.shape[-2], len(wavelet.dec_lo))
     padr, padl = get_pad(data.shape[-1], len(wavelet.dec_lo))
     data_pad = torch.nn.functional.pad(data, [padt, padb, padl, padr],
-                                       mode='reflect')
+                                       mode='constant') #mode='reflect')
     return data_pad
 
 
