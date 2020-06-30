@@ -4,11 +4,20 @@ import pywt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from util.wavelet_pool2d import StaticWaveletPool2d
-
+from util.wavelet_pool2d import StaticWaveletPool2d, AdaptiveWaveletPool2d
+from util.learnable_wavelets import SoftOrthogonalWavelet
 
 def get_pool(pool_type):
-    if pool_type == 'wavelet':
+    if pool_type == 'adaptive_wavelet':
+        degree = 1
+        size = degree*2
+        wavelet = SoftOrthogonalWavelet( # ProductFilter(
+                    torch.rand(size, requires_grad=True),
+                    torch.rand(size, requires_grad=True),
+                    torch.rand(size, requires_grad=True),
+                    torch.rand(size, requires_grad=True))
+        return AdaptiveWaveletPool2d(wavelet=wavelet)
+    elif pool_type == 'wavelet':
         return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'))
     elif pool_type == 'max':
         return nn.MaxPool2d(2)
@@ -53,6 +62,7 @@ class DenseNet(nn.Module):
                  reduction=0.5, num_classes=10, pool='avg'):
         super(DenseNet, self).__init__()
         self.growth_rate = growth_rate
+        self.pool_type = pool
 
         num_planes = 2*growth_rate
         self.conv1 = nn.Conv2d(3, num_planes, kernel_size=3, padding=1, bias=False)
@@ -99,6 +109,13 @@ class DenseNet(nn.Module):
         out = self.linear(out)
         return out
 
+    def get_wavelet_loss(self):
+        if self.pool_type == 'adaptive_wavelet':
+            return self.trans1.pool.wavelet.wavelet_loss() + \
+                   self.trans2.pool.wavelet.wavelet_loss() + \
+                   self.trans3.pool.wavelet.wavelet_loss()
+        else:
+            return 0.
 
 def DenseNet121():
     return DenseNet(Bottleneck, [6, 12, 24, 16], growth_rate=32)

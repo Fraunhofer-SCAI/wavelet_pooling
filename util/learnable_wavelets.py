@@ -119,7 +119,46 @@ class ProductFilter(WaveletFilter, torch.nn.Module):
         return self.product_filter_loss()
 
 
-class OrthogonalWavelet(WaveletFilter, torch.nn.Module):
+
+class SoftOrthogonalWavelet(ProductFilter, torch.nn.Module):
+    def __init__(self, dec_lo: torch.Tensor, dec_hi: torch.Tensor,
+                 rec_lo: torch.Tensor, rec_hi: torch.Tensor):
+        super().__init__(dec_lo, dec_hi, rec_lo, rec_hi)
+
+    def rec_lo_orthogonality_loss(self):
+        """ See Strang p. 148/149 or Harbo p. 80.
+            Since L is a convolution matrix, LL^T can be evaluated
+            trough convolution.
+            :return: A tensor with the orthogonality constraint value. """
+        filt_len = self.dec_lo.shape[-1]
+        pad_dec_lo = torch.cat([self.dec_lo, torch.zeros([filt_len, ],
+                               device=self.dec_lo.device)], -1)
+        res = torch.nn.functional.conv1d(pad_dec_lo.unsqueeze(0).unsqueeze(0),
+                                         self.dec_lo.unsqueeze(0).unsqueeze(0),
+                                         stride=2)
+        test = torch.zeros_like(res.squeeze(0).squeeze(0))
+        test[0] = 1
+        err = res-test
+        return torch.sum(err*err)
+
+    def filt_bank_orthogonality_loss(self):
+        """ On Page 79 of the Book Ripples in Mathematics
+            by Jensen la Cour-Harbo the constraint
+            g0[k] = h0[-k] and g1[k] = h1[-k] for orthogonal filters
+            is presented. A measurement
+            is implemented below."""
+        eq0 = self.dec_lo - self.rec_lo.flip(-1)
+        eq1 = self.dec_hi - self.rec_hi.flip(-1)
+        seq0 = torch.sum(torch.abs(eq0))
+        seq1 = torch.sum(torch.abs(eq1))
+        # print(eq0, eq1)
+        return seq0 + seq1
+
+    def wavelet_loss(self):
+        return self.product_filter_loss() + self.filt_bank_orthogonality_loss()
+
+
+class HardOrthogonalWavelet(WaveletFilter, torch.nn.Module):
     def __init__(self, init_tensor: torch.Tensor):
         self.dec_lo = torch.nn.Parameter(init_tensor)
         m1 = torch.tensor([-1], device=self.dec_lo.device,

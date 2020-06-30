@@ -7,7 +7,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 from util.wavelet_pool2d import StaticWaveletPool2d, AdaptiveWaveletPool2d
-from util.learnable_wavelets import ProductFilter
+from util.learnable_wavelets import ProductFilter, SoftOrthogonalWavelet
 # Test set: Average loss: 0.0295, Accuracy: 9905/10000 (99%)
 # Wavelet Test set: Test set: Average loss: 0.0400, Accuracy: 9898/10000 (99%)
 # maxPool: Test set: Average loss: 0.0216, Accuracy: 9944/10000 (99%)
@@ -24,32 +24,12 @@ class Net(nn.Module):
                 print('wavelet pool')
                 return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'))
             elif pool_type == 'adaptive_wavelet':
-                # wavelet = ProductFilter(
-                #     torch.tensor([0., 0., 0.7071067811865476,
-                #                   0.7071067811865476, 0., 0.],
-                #                  requires_grad=True),
-                #     torch.tensor([0., 0., -0.7071067811865476,
-                #                   0.7071067811865476, 0., 0.],
-                #                  requires_grad=True),
-                #     torch.tensor([0., 0., 0.7071067811865476,
-                #                   0.7071067811865476, 0., 0.],
-                #                  requires_grad=True),
-                #     torch.tensor([0., 0., 0.7071067811865476,
-                #                   -0.7071067811865476, 0., 0.],
-                #                  requires_grad=True))
-                wavelet = ProductFilter(
-                    torch.tensor([0, 0, 0.7071067811865476,
-                                  0.70710678118654760, 0, 0],
-                                 requires_grad=True),
-                    torch.tensor([0, 0, -0.7071067811865476,
-                                  0.7071067811865476, 0, 0],
-                                 requires_grad=True),
-                    torch.tensor([0, 0, 0.7071067811865476,
-                                  0.7071067811865476, 0, 0],
-                                 requires_grad=True),
-                    torch.tensor([0, 0, 0.7071067811865476,
-                                  -0.7071067811865476, 0, 0],
-                                 requires_grad=True))
+                # random wavelet
+                wavelet = SoftOrthogonalWavelet( # ProductFilter(
+                    torch.rand(2, requires_grad=True),
+                    torch.rand(2, requires_grad=True),
+                    torch.rand(2, requires_grad=True),
+                    torch.rand(2, requires_grad=True))
                 return AdaptiveWaveletPool2d(wavelet=wavelet)
             elif pool_type == 'max':
                 print('max pool')
@@ -78,7 +58,7 @@ class Net(nn.Module):
     def forward(self, x):
         x = self.conv1(x)
         # print(x.shape)
-        # x = self.pool1(x)
+        x = self.pool1(x)
         # print(x.shape)
         x = self.norm1(x)
         x = self.conv2(x)
@@ -156,7 +136,7 @@ def main():
     parser.add_argument('--test-batch-size', type=int, default=1000,
                         metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=14, metavar='N',
+    parser.add_argument('--epochs', type=int, default=16, metavar='N',
                         help='number of epochs to train (default: 14)')
     parser.add_argument('--lr', type=float, default=1.0, metavar='LR',
                         help='learning rate (default: 1.0)')
