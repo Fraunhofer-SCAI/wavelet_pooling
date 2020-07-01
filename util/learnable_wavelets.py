@@ -149,8 +149,8 @@ class SoftOrthogonalWavelet(ProductFilter, torch.nn.Module):
             is implemented below."""
         eq0 = self.dec_lo - self.rec_lo.flip(-1)
         eq1 = self.dec_hi - self.rec_hi.flip(-1)
-        seq0 = torch.sum(torch.abs(eq0))
-        seq1 = torch.sum(torch.abs(eq1))
+        seq0 = torch.sum(eq0*eq0)
+        seq1 = torch.sum(eq1*eq1)
         # print(eq0, eq1)
         return seq0 + seq1
 

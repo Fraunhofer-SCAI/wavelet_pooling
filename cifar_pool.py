@@ -150,6 +150,7 @@ def test(epoch):
 
 
 for epoch in range(start_epoch, start_epoch+200):
+    # with torch.autograd.detect_anomaly():
     train(epoch)
     test(epoch)
 
