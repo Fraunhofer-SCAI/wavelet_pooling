@@ -4,6 +4,7 @@ checkpoint/
 checkpoint_wavelet/
 checkpoint_max/
 checkpoint_avg/
+checkpoint_adaptive_wavelet/
 out/
 
 # queue files
