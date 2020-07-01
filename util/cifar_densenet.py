@@ -12,10 +12,10 @@ def get_pool(pool_type):
         degree = 1
         size = degree*2
         wavelet = SoftOrthogonalWavelet( # ProductFilter(
-                    torch.rand(size, requires_grad=True),
-                    torch.rand(size, requires_grad=True),
-                    torch.rand(size, requires_grad=True),
-                    torch.rand(size, requires_grad=True))
+                    torch.rand(size, requires_grad=True)*2. - 1.,
+                    torch.rand(size, requires_grad=True)*2. - 1.,
+                    torch.rand(size, requires_grad=True)*2. - 1.,
+                    torch.rand(size, requires_grad=True)*2. - 1.)
         return AdaptiveWaveletPool2d(wavelet=wavelet)
     elif pool_type == 'wavelet':
         return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'))
