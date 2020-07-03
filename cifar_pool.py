@@ -92,7 +92,7 @@ def train(epoch):
         optimizer.zero_grad()
         outputs = net(inputs)
         closs = criterion(outputs, targets)
-        loss = closs + net.get_wavelet_loss()
+        loss = closs + net.get_wavelet_loss()*10.
         loss.backward()
         optimizer.step()
 
