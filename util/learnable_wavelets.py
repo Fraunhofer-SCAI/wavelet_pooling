@@ -30,8 +30,8 @@ class WaveletFilter(ABC):
     # def parameters(self):
     #     raise NotImplementedError
 
-    def alias_cancellation_loss(self) -> [torch.Tensor, torch.Tensor,
-                                          torch.Tensor]:
+    def pr_alias_cancellation_loss(self) -> [torch.Tensor, torch.Tensor,
+                                             torch.Tensor]:
         """ Strang+Nguyen 105: F0(z) = H1(-z); F1(z) = -H0(-z)
         Alternating sign convention from 0 to N see Strang overview
         on the back of the cover.
@@ -50,6 +50,32 @@ class WaveletFilter(ABC):
         err2 = rec_hi - m1*mask*dec_lo
         err2s = torch.sum(err2*err2)
         return err1s + err2s, err1, err2
+
+    def alias_cancellation_loss(self):
+        """ Implementation of the ac-loss as described on page 104 of Strang+Nguyen. """
+        dec_lo, dec_hi, rec_lo, rec_hi = self.filter_bank
+        m1 = torch.tensor([-1], device=dec_lo.device, dtype=dec_lo.dtype)
+        length = dec_lo.shape[0]
+        mask = torch.tensor([torch.pow(m1, n) for n in range(length)][::-1],
+                            device=dec_lo.device, dtype=dec_lo.dtype)
+        # polynomial multiplication is convolution, compute p(z):
+        pad = dec_lo.shape[0]-1
+        p_lo = torch.nn.functional.conv1d(
+            dec_lo.unsqueeze(0).unsqueeze(0)*mask,
+            torch.flip(rec_lo, [-1]).unsqueeze(0).unsqueeze(0),
+            padding=pad)
+
+        pad = dec_hi.shape[0]-1
+        p_hi = torch.nn.functional.conv1d(
+            dec_hi.unsqueeze(0).unsqueeze(0)*mask,
+            torch.flip(rec_hi, [-1]).unsqueeze(0).unsqueeze(0),
+            padding=pad)
+
+        p_test = p_lo + p_hi
+        zeros = torch.zeros(p_test.shape, device=p_test.device,
+                            dtype=p_test.dtype)
+        errs = (p_test - zeros)*(p_test - zeros)
+        return torch.sum(errs), p_test, zeros
 
     def perfect_reconstruction_loss(self) -> [torch.Tensor, torch.Tensor,
                                               torch.Tensor]:
@@ -117,7 +143,6 @@ class ProductFilter(WaveletFilter, torch.nn.Module):
 
     def wavelet_loss(self):
         return self.product_filter_loss()
-
 
 
 class SoftOrthogonalWavelet(ProductFilter, torch.nn.Module):
@@ -229,13 +254,17 @@ if __name__ == '__main__':
     import numpy as np
     print('create orthogonal wavelet')
     print('float32 precision', np.finfo(np.float32).eps)
-    pywt_wave = pywt.Wavelet('db8')
-    init = torch.tensor(pywt_wave.dec_lo)
+    pywt_wave = pywt.Wavelet('db2')
+    # init = torch.tensor(pywt_wave.dec_lo)
     # init = torch.zeros(init.shape).uniform_()
-    orth_wave = OrthogonalWavelet(init)
+    orth_wave = SoftOrthogonalWavelet(torch.tensor(pywt_wave.dec_lo),
+                                      torch.tensor(pywt_wave.dec_hi),
+                                      torch.tensor(pywt_wave.rec_lo),
+                                      torch.tensor(pywt_wave.rec_hi))
     orth_wave.wavelet_loss()
-    print('orth-harbo', orth_wave.filt_bank_orthogonality_loss().numpy())
-    print('orth-strang', orth_wave.rec_lo_orthogonality_loss().numpy())
+    print('orth-harbo', 
+          orth_wave.filt_bank_orthogonality_loss().detach().numpy())
+    print('orth-strang', orth_wave.rec_lo_orthogonality_loss().detach().numpy())
     # print('rec_lo', pywt_wave.rec_lo, orth_wave.rec_lo)
     # print('rec_hi', pywt_wave.rec_hi, orth_wave.rec_hi)
     # print('dec_lo', pywt_wave.dec_lo, orth_wave.dec_lo)
@@ -246,5 +275,5 @@ if __name__ == '__main__':
                               torch.tensor(pywt_wave.dec_hi),
                               torch.tensor(pywt_wave.rec_lo),
                               torch.tensor(pywt_wave.rec_hi))
-    print(prod_filt.product_filter_loss())
+    print(prod_filt.product_filter_loss().detach().numpy())
     print('stop')

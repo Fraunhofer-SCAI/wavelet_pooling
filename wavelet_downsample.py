@@ -1,7 +1,8 @@
 import pywt
 import numpy as np
 import torch
-from util.conv_transform import conv_fwt_2d, conv_ifwt_2d, get_pad, flatten_2d_coeff_lst
+from util.conv_transform import conv_fwt_2d, conv_ifwt_2d, get_pad
+from util.conv_transform import flatten_2d_coeff_lst
 from scipy import misc
 import matplotlib.pyplot as plt
 
