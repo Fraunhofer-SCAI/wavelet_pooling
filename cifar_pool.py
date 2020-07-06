@@ -82,6 +82,22 @@ if args.resume:
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
+else:
+    if args.pool == 'adaptive_wavelet':
+        # pretrain wavelet.
+        print('pretraining wavelets')
+        wavelets = net.get_wavelets()
+        for wavelet in wavelets:
+            optimizer = optim.SGD(wavelet.parameters(), lr=0.01)
+            print('init wvl loss', wavelet.wavelet_loss().item())
+            for i in range(100):
+                optimizer.zero_grad()
+                wvl_loss = wavelet.wavelet_loss()
+                wvl_loss.backward()
+                # print(i, wvl_loss.item())
+                optimizer.step()
+            print('final wvl loss', wavelet.wavelet_loss().item())
+
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=args.lr,
@@ -126,7 +142,6 @@ def train(epoch):
             writer.add_scalar(tag='train/wvl_loss', scalar_value=net.get_wavelet_loss().item(), global_step=n_iter)
             writer.add_scalar(tag='train/cross_entropy_loss', scalar_value=closs.item(), global_step=n_iter)
 
-
             if args.pool == 'adaptive_wavelet':
                 wavelets = net.get_wavelets()
                 for wavelet_no, wavelet in enumerate(wavelets):
@@ -146,30 +161,6 @@ def train(epoch):
                         writer.add_scalar(tag='train_wavelets/orth_harbo/w_' + str(wavelet_no),
                                       scalar_value=wavelet.filt_bank_orthogonality_loss(),
                                       global_step=n_iter)
-
-                    
-                    # for filt_name in ['rec_lo', 'rec_hi', 'dec_lo', 'dec_hi']:
-                    #     if filt_name == 'rec_lo':
-                    #         writer.add_scalars(
-                    #             main_tag='wavelets/'+'wavelet_'+str(wavelet_no)+filt_name, 
-                    #             tag_scalar_dict=dict(zip([str(no) for no in list(range(len(wavelet.rec_lo)))],
-                    #                                  wavelet.rec_lo)), global_step=n_iter)
-                    #     elif filt_name == 'rec_hi':
-                    #         writer.add_scalars(
-                    #             main_tag='wavelets/'+'wavelet_'+str(wavelet_no)+filt_name, 
-                    #             tag_scalar_dict=dict(zip([str(no) for no in list(range(len(wavelet.rec_hi)))],
-                    #                                      wavelet.rec_hi)), global_step=n_iter)
-                    #     elif filt_name == 'dec_lo':
-                    #         writer.add_scalars(
-                    #             main_tag='wavelets/'+'wavelet_'+str(wavelet_no)+filt_name, 
-                    #             tag_scalar_dict=dict(zip([str(no) for no in list(range(len(wavelet.dec_lo)))],
-                    #                                      wavelet.dec_lo)), global_step=n_iter)
-                    #     elif filt_name == 'dec_hi':
-                    #         writer.add_scalars(
-                    #             main_tag='wavelets/'+'wavelet_'+str(wavelet_no)+filt_name, 
-                    #             tag_scalar_dict=dict(zip([str(no) for no in list(range(len(wavelet.dec_hi)))],
-                    #                                      wavelet.dec_hi)), global_step=n_iter)
-                       
 
 
 
