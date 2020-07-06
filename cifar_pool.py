@@ -5,6 +5,7 @@ import torch.nn as nn
 # import torch.nn.functional as F
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
+from torch.utils.tensorboard import SummaryWriter
 import torchvision
 import torchvision.transforms as transforms
 import os
@@ -20,12 +21,19 @@ parser.add_argument('--resume', '-r', action='store_true',
                     help='resume from checkpoint')
 parser.add_argument('--pool', type=str, default='adaptive_wavelet',
                     help='Choose the pooling mode, adaptive_wavelet, wavelet, avg, max')
+parser.add_argument('--log', action='store_true', default=True,
+                    help='Turns on tensorboard logging.')
+
 
 args = parser.parse_args()
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 best_acc = 0  # best test accuracy
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
+
+if args.log:
+    writer = SummaryWriter(comment=args.pool)
+
 
 # Data
 print('==> Preparing data..')
@@ -110,6 +118,39 @@ def train(epoch):
                      'Train-Loss: %.3f | wvl %.5f | Acc: %.3f%% (%d/%d)'
                      % (train_loss/(batch_idx+1), wvl_loss/(batch_idx+1), 100.*correct/total,
                         correct, total))
+        
+        if args.log:
+            # TODO add more to the tensorboard log.
+            writer.add_scalar(tag='wvl_loss', scalar_value=net.get_wavelet_loss().item())
+            writer.add_scalar(tag='cross_entropy_loss', scalar_value=closs.item())
+
+
+            if args.pool == 'adaptive_wavelet':
+                wavelets = net.get_wavelets()
+                for wavelet_no, wavelet in enumerate(wavelets):
+                    for filt_name in ['rec_lo', 'rec_hi', 'dec_lo', 'dec_hi']:
+                        if filt_name == 'rec_lo':
+                            writer.add_scalars(
+                                main_tag='wavelets/'+str(wavelet_no)+filt_name, 
+                                tag_scalar_dict=dict(zip([str(no) for no in list(range(len(wavelet.rec_lo)))],
+                                                     wavelet.rec_lo)))
+                        elif filt_name == 'rec_hi':
+                            writer.add_scalars(
+                                main_tag='wavelets/'+str(wavelet_no)+filt_name, 
+                                tag_scalar_dict=dict(zip([str(no) for no in list(range(len(wavelet.rec_hi)))],
+                                                         wavelet.rec_hi)))
+                        elif filt_name == 'dec_lo':
+                            writer.add_scalars(
+                                main_tag='wavelets/'+str(wavelet_no)+filt_name, 
+                                tag_scalar_dict=dict(zip([str(no) for no in list(range(len(wavelet.dec_lo)))],
+                                                         wavelet.dec_lo)))
+                        elif filt_name == 'dec_hi':
+                            writer.add_scalars(
+                                main_tag='wavelets/'+str(wavelet_no)+filt_name, 
+                                tag_scalar_dict=dict(zip([str(no) for no in list(range(len(wavelet.dec_hi)))],
+                                                         wavelet.dec_hi)))
+                       
+
 
 
 def test(epoch):

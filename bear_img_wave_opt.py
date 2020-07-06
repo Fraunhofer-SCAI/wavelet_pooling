@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import tikzplotlib
 
 
-iterations = 5000
+iterations = 10
 face = misc.face()  # [128:(512+128), 256:(512+256)]
 face = face / 255.
 face = torch.tensor(face.astype(np.float32))
@@ -74,7 +74,9 @@ for i in range(iterations):
           'wvl', wavelet.wavelet_loss().detach().numpy())
     mse_list.append(mse.detach().numpy())
 
+
 plt.plot(mse_list)
+tikzplotlib.save('opt_mse.tex', standalone=True)
 plt.show()
 
 diff_s = diff*diff
@@ -87,17 +89,17 @@ plt.show()
 
 print('optimization finished')
 
-plt.imshow(final.detach().numpy())
+plt.imshow(final[:, 0, :, :].permute([1, 2, 0]).detach().numpy())
 plt.title('optimized-haar')
 tikzplotlib.save('optimized_haar.tex', standalone=True)
 plt.show()
 
-plt.imshow(down_face.detach().numpy())
+plt.imshow(down_face[:, 0, :, :].permute([1, 2, 0]).detach().numpy())
 plt.title('haar')
-tikzplotlib.save('optimized_haar.tex', standalone=True)
+tikzplotlib.save('haar.tex', standalone=True)
 plt.show()
 
-plt.imshow(diff_s.detach().numpy())
+plt.imshow(diff_s[:, 0, :, :].permute([1, 2, 0]).detach().numpy())
 plt.title('normalized-difference')
 tikzplotlib.save('normalized_difference.tex', standalone=True)
 plt.show()

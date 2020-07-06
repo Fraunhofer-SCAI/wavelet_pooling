@@ -30,7 +30,7 @@ class WaveletFilter(ABC):
     # def parameters(self):
     #     raise NotImplementedError
 
-    def pr_alias_cancellation_loss(self) -> [torch.Tensor, torch.Tensor,
+    def pf_alias_cancellation_loss(self) -> [torch.Tensor, torch.Tensor,
                                              torch.Tensor]:
         """ Strang+Nguyen 105: F0(z) = H1(-z); F1(z) = -H0(-z)
         Alternating sign convention from 0 to N see Strang overview
