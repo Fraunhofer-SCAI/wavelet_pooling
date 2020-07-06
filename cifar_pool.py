@@ -90,7 +90,7 @@ else:
         for wavelet in wavelets:
             optimizer = optim.SGD(wavelet.parameters(), lr=0.01)
             print('init wvl loss', wavelet.wavelet_loss().item())
-            for i in range(100):
+            for i in range(200):
                 optimizer.zero_grad()
                 wvl_loss = wavelet.wavelet_loss()
                 wvl_loss.backward()

@@ -31,7 +31,7 @@ class WaveletFilter(ABC):
     #     raise NotImplementedError
 
     def pf_alias_cancellation_loss(self) -> [torch.Tensor, torch.Tensor,
-                                             torch.Tensor]:
+                                              torch.Tensor]:
         """ Strang+Nguyen 105: F0(z) = H1(-z); F1(z) = -H0(-z)
         Alternating sign convention from 0 to N see Strang overview
         on the back of the cover.
@@ -40,13 +40,13 @@ class WaveletFilter(ABC):
         m1 = torch.tensor([-1], device=dec_lo.device, dtype=dec_lo.dtype)
         length = dec_lo.shape[0]
         mask = torch.tensor([torch.pow(m1, n) for n in range(length)][::-1],
-                            device=dec_lo.device, dtype=dec_lo.dtype)
+                             device=dec_lo.device, dtype=dec_lo.dtype)
         err1 = rec_lo - mask*dec_hi
         err1s = torch.sum(err1*err1)
 
         length = dec_lo.shape[0]
         mask = torch.tensor([torch.pow(m1, n) for n in range(length)][::-1],
-                            device=dec_lo.device, dtype=dec_lo.dtype)
+                             device=dec_lo.device, dtype=dec_lo.dtype)
         err2 = rec_hi - m1*mask*dec_lo
         err2s = torch.sum(err2*err2)
         return err1s + err2s, err1, err2
