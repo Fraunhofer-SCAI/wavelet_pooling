@@ -9,7 +9,7 @@ from util.learnable_wavelets import SoftOrthogonalWavelet
 
 def get_pool(pool_type):
     if pool_type == 'adaptive_wavelet':
-        degree = 1
+        degree = 2
         size = degree*2
         wavelet = SoftOrthogonalWavelet( # ProductFilter(
                     torch.rand(size, requires_grad=True)*2. - 1.,

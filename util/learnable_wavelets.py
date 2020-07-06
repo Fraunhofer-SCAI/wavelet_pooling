@@ -52,7 +52,8 @@ class WaveletFilter(ABC):
         return err1s + err2s, err1, err2
 
     def alias_cancellation_loss(self):
-        """ Implementation of the ac-loss as described on page 104 of Strang+Nguyen. """
+        """ Implementation of the ac-loss as described on page 104 of Strang+Nguyen.
+            F0(z)H0(-z) + F1(z)H1(-z) = 0 """
         dec_lo, dec_hi, rec_lo, rec_hi = self.filter_bank
         m1 = torch.tensor([-1], device=dec_lo.device, dtype=dec_lo.dtype)
         length = dec_lo.shape[0]

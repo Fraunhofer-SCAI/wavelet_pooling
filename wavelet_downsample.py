@@ -12,15 +12,12 @@ face = face / 255.
 face = torch.tensor(face.astype(np.float32))
 face = face.unsqueeze(0)
 face = face.permute([3, 0, 1, 2])
-wavelet = pywt.Wavelet('db12')
-coeff = conv_fwt_2d(face, wavelet=wavelet, scales=2)
-print([c.shape for c in flatten_2d_coeff_lst(coeff)])
-down_coeff = coeff[:-1]
-print([c.shape for c in flatten_2d_coeff_lst(down_coeff)])
-down_face = conv_ifwt_2d(down_coeff, wavelet=wavelet)
-# TODO: Fix the padding problem!!!
-filt_len = len(wavelet.dec_lo)
+print('face shape', face.shape)
+wavelet = pywt.Wavelet('db8')
 
+
+filt_len = len(wavelet.dec_lo)
+print('filt_len', filt_len)
 padr = 0
 padl = 0
 padt = 0
@@ -31,6 +28,16 @@ if filt_len > 2:
     padt += (2 * filt_len - 3) // 2
     padb += (2 * filt_len - 3) // 2
 print('pad', padr, padl, padt, padb)
+# face = torch.nn.functional.pad(face, [padt, padb, padl, padr])
+print('face_pad', face.shape)
+
+scales = 2
+coeff = conv_fwt_2d(face, wavelet=wavelet, scales=scales)
+print([c.shape for c in flatten_2d_coeff_lst(coeff)])
+down_coeff = coeff[:-1]
+print([c.shape for c in flatten_2d_coeff_lst(down_coeff)])
+down_face = conv_ifwt_2d(down_coeff, wavelet=wavelet)
+
 if padt > 0:
     down_face = down_face[..., padt:, :]
 if padb > 0:
@@ -46,7 +53,7 @@ down_face = rescale*down_face
 print('face mean', np.mean(face.numpy()))
 print('down face mean', np.mean(down_face.numpy()))
 
-print('shape', down_face.shape)
+print('down shape', down_face.shape)
 plt.imshow(face.squeeze(1).permute([1, 2, 0]).numpy())
 plt.show()
 plt.imshow(down_face.permute([1, 2, 3, 0]).squeeze(0).numpy())

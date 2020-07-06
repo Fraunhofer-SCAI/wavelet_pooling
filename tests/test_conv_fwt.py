@@ -4,7 +4,7 @@ import pywt
 import sys
 sys.path.append('./')
 from util.mackey_glass import MackeyGenerator
-from util.learnable_wavelets import OrthogonalWavelet
+from util.learnable_wavelets import SoftOrthogonalWavelet
 from util.conv_transform import conv_fwt, conv_ifwt, conv_fwt_2d, conv_ifwt_2d
 from util.conv_transform import flatten_2d_coeff_lst
 
@@ -113,9 +113,12 @@ def test_conv_fwt():
     assert err < 1e-4
 
     # orthogonal wavelet object test
-    orthwave = OrthogonalWavelet(torch.tensor(wavelet.rec_lo))
+    orthwave = SoftOrthogonalWavelet(torch.tensor(wavelet.rec_lo),
+                                     torch.tensor(wavelet.rec_hi),
+                                     torch.tensor(wavelet.dec_lo),
+                                     torch.tensor(wavelet.dec_hi))
     res = conv_ifwt(conv_fwt(mackey_data_1.unsqueeze(1), orthwave), orthwave)
-    err = torch.mean(torch.abs(mackey_data_1 - res)).numpy()
+    err = torch.mean(torch.abs(mackey_data_1 - res.detach())).numpy()
     print('orth reconstruction error scale 4:', err,
           ['ok' if err < 1e-4 else 'failed!'])
     assert err < 1e-4
