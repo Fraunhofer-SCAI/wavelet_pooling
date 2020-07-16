@@ -1,10 +1,10 @@
+import matplotlib.pyplot as plt
 import pywt
 import numpy as np
 import torch
 from util.conv_transform import conv_fwt_2d, conv_ifwt_2d, get_pad
 from util.conv_transform import flatten_2d_coeff_lst
 from scipy import misc
-import matplotlib.pyplot as plt
 
 
 face = misc.face() #[128:(512+128), 256:(512+256)]
@@ -31,7 +31,7 @@ print('pad', padr, padl, padt, padb)
 # face = torch.nn.functional.pad(face, [padt, padb, padl, padr])
 print('face_pad', face.shape)
 
-scales = 2
+scales = 4
 coeff = conv_fwt_2d(face, wavelet=wavelet, scales=scales)
 print([c.shape for c in flatten_2d_coeff_lst(coeff)])
 down_coeff = coeff[:-1]
@@ -53,9 +53,11 @@ down_face = rescale*down_face
 print('face mean', np.mean(face.numpy()))
 print('down face mean', np.mean(down_face.numpy()))
 
+plt.figure()
 print('down shape', down_face.shape)
 plt.imshow(face.squeeze(1).permute([1, 2, 0]).numpy())
 plt.show()
+plt.figure()
 plt.imshow(down_face.permute([1, 2, 3, 0]).squeeze(0).numpy())
 plt.show()
 

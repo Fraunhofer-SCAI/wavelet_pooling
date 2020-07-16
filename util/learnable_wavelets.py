@@ -251,6 +251,32 @@ class HardOrthogonalWavelet(WaveletFilter, torch.nn.Module):
         return self.rec_lo_orthogonality_loss()
 
 
+
+class PowerWavelet(WaveletFilter, torch.nn.Module):
+    def __init__(self, init_alpha: torch.tensor=torch.tensor(-1./2.)):
+        self.alpha = init_alpha
+
+    @property
+    def filter_bank(self):
+        two = torch.tensor(2.)
+        return torch.stack([torch.pow(two, self.alpha), torch.pow(two, self.alpha)]), \
+               torch.stack([-torch.pow(two, self.alpha), torch.pow(two, self.alpha)]), \
+               torch.stack([torch.pow(two, -self.alpha), torch.pow(two, -self.alpha)]), \
+               torch.stack([torch.pow(two, -self.alpha), -torch.pow(two, -self.alpha)])
+                
+    def __len__(self):
+        return 2
+
+    def product_filter_loss(self):
+        return self.perfect_reconstruction_loss()[0] \
+               + self.alias_cancellation_loss()[0]
+
+
+    def wavelet_loss(self):
+        return self.product_filter_loss()
+
+
+
 if __name__ == '__main__':
     import numpy as np
     print('create orthogonal wavelet')
@@ -277,4 +303,9 @@ if __name__ == '__main__':
                               torch.tensor(pywt_wave.rec_lo),
                               torch.tensor(pywt_wave.rec_hi))
     print(prod_filt.product_filter_loss().detach().numpy())
+    
+
+    powerwavelet = PowerWavelet(-2.)
+    print('power wavelet 2.', 'ac', powerwavelet.alias_cancellation_loss())
+    print('power wavelet 2.', 'pr', powerwavelet.perfect_reconstruction_loss())
     print('stop')
