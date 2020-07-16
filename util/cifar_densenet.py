@@ -115,7 +115,7 @@ class DenseNet(nn.Module):
                    self.trans2.pool.wavelet.wavelet_loss() + \
                    self.trans3.pool.wavelet.wavelet_loss()
         else:
-            return 0.
+            return torch.tensor(0.)
 
     def get_wavelets(self):
         if self.pool_type == 'adaptive_wavelet':
