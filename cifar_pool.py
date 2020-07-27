@@ -154,7 +154,7 @@ def train(epoch):
                                       scalar_value=pool.wavelet.perfect_reconstruction_loss()[0],
                                       global_step=n_iter)
 
-                    if type(wavelet) is SoftOrthogonalWavelet:
+                    if type(pool.wavelet) is SoftOrthogonalWavelet:
                         writer.add_scalar(tag='train_wavelets/orth_strang/w_' + str(pool_no),
                                       scalar_value=pool.wavelet.rec_lo_orthogonality_loss(),
                                       global_step=n_iter)
