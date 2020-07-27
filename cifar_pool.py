@@ -163,7 +163,8 @@ def train(epoch):
                                       global_step=n_iter)
 
                     if pool.use_scale_weights is True:
-                        writer.add_histogram('train_wavelets/scale_weights_'+ str(pool_no), pool.scales_weights)
+                        writer.add_histogram('train_wavelets/scale_weights_'+ str(pool_no), values=pool.scales_weights,
+                                             global_step=n_iter)
 
 def test(epoch):
     global best_acc
