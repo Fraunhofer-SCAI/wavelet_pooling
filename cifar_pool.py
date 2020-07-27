@@ -143,26 +143,27 @@ def train(epoch):
             writer.add_scalar(tag='train/cross_entropy_loss', scalar_value=closs.item(), global_step=n_iter)
 
             if args.pool == 'adaptive_wavelet':
-                wavelets = net.get_wavelets()
-                for wavelet_no, wavelet in enumerate(wavelets):
-                    writer.add_scalar(tag='train_wavelets/ac_prod_filt_loss/w_' + str(wavelet_no),
-                                      scalar_value=wavelet.pf_alias_cancellation_loss()[0], global_step=n_iter)
-                    writer.add_scalar(tag='train_wavelets/ac_conv_loss/w_' + str(wavelet_no),
-                                      scalar_value=wavelet.alias_cancellation_loss()[0],
+                pool_layers = net.get_pool()
+                for pool_no, pool in enumerate(pool_layers):
+                    writer.add_scalar(tag='train_wavelets/ac_prod_filt_loss/w_' + str(pool_no),
+                                      scalar_value=pool.wavelet.pf_alias_cancellation_loss()[0], global_step=n_iter)
+                    writer.add_scalar(tag='train_wavelets/ac_conv_loss/w_' + str(pool_no),
+                                      scalar_value=pool.wavelet.alias_cancellation_loss()[0],
                                       global_step=n_iter)
-                    writer.add_scalar(tag='train_wavelets/pr_loss/w_' + str(wavelet_no),
-                                      scalar_value=wavelet.perfect_reconstruction_loss()[0],
+                    writer.add_scalar(tag='train_wavelets/pr_loss/w_' + str(pool_no),
+                                      scalar_value=pool.wavelet.perfect_reconstruction_loss()[0],
                                       global_step=n_iter)
 
                     if type(wavelet) is SoftOrthogonalWavelet:
-                        writer.add_scalar(tag='train_wavelets/orth_strang/w_' + str(wavelet_no),
-                                      scalar_value=wavelet.rec_lo_orthogonality_loss(),
+                        writer.add_scalar(tag='train_wavelets/orth_strang/w_' + str(pool_no),
+                                      scalar_value=pool.wavelet.rec_lo_orthogonality_loss(),
                                       global_step=n_iter)
-                        writer.add_scalar(tag='train_wavelets/orth_harbo/w_' + str(wavelet_no),
-                                      scalar_value=wavelet.filt_bank_orthogonality_loss(),
+                        writer.add_scalar(tag='train_wavelets/orth_harbo/w_' + str(pool_no),
+                                      scalar_value=pool.wavelet.filt_bank_orthogonality_loss(),
                                       global_step=n_iter)
 
-
+                    if pool.use_scale_weights:
+                        writer.add_histogram('train_wavelets/scale_weights_'+ str(pool_no), pool.scales_weights)
 
 def test(epoch):
     global best_acc

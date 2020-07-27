@@ -117,6 +117,14 @@ class DenseNet(nn.Module):
         else:
             return torch.tensor(0.)
 
+    def get_pool(self):
+        if self.pool_type == 'adaptive_wavelet':
+            return [self.trans1.pool,
+                    self.trans2.pool,
+                    self.trans3.pool]
+        else:
+            return []
+
     def get_wavelets(self):
         if self.pool_type == 'adaptive_wavelet':
             return [self.trans1.pool.wavelet,
@@ -124,8 +132,6 @@ class DenseNet(nn.Module):
                     self.trans3.pool.wavelet]
         else:
             return []
-
-
 
 def DenseNet121():
     return DenseNet(Bottleneck, [6, 12, 24, 16], growth_rate=32)
