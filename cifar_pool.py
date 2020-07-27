@@ -145,26 +145,30 @@ def train(epoch):
             if args.pool == 'adaptive_wavelet':
                 pool_layers = net.get_pool()
                 for pool_no, pool in enumerate(pool_layers):
-                    writer.add_scalar(tag='train_wavelets/ac_prod_filt_loss/w_' + str(pool_no),
+                    writer.add_scalar(tag='train_wavelets_prod/ac_prod_filt_loss/pl_' + str(pool_no),
                                       scalar_value=pool.wavelet.pf_alias_cancellation_loss()[0], global_step=n_iter)
-                    writer.add_scalar(tag='train_wavelets/ac_conv_loss/w_' + str(pool_no),
+                    writer.add_scalar(tag='train_wavelets_prod/ac_conv_loss/pl_' + str(pool_no),
                                       scalar_value=pool.wavelet.alias_cancellation_loss()[0],
                                       global_step=n_iter)
-                    writer.add_scalar(tag='train_wavelets/pr_loss/w_' + str(pool_no),
+                    writer.add_scalar(tag='train_wavelets_prod/pr_loss/pl_' + str(pool_no),
                                       scalar_value=pool.wavelet.perfect_reconstruction_loss()[0],
                                       global_step=n_iter)
 
                     if type(pool.wavelet) is SoftOrthogonalWavelet:
-                        writer.add_scalar(tag='train_wavelets/orth_strang/w_' + str(pool_no),
+                        writer.add_scalar(tag='train_wavelets_orth/strang/pl_' + str(pool_no),
                                       scalar_value=pool.wavelet.rec_lo_orthogonality_loss(),
                                       global_step=n_iter)
-                        writer.add_scalar(tag='train_wavelets/orth_harbo/w_' + str(pool_no),
+                        writer.add_scalar(tag='train_wavelets_orth/harbo/pl_' + str(pool_no),
                                       scalar_value=pool.wavelet.filt_bank_orthogonality_loss(),
                                       global_step=n_iter)
 
                     if pool.use_scale_weights is True:
-                        writer.add_histogram('train_wavelets/scale_weights_'+ str(pool_no), values=pool.scales_weights,
-                                             global_step=n_iter)
+                        for wno, weight in enumerate(pool.scales_weights):
+                            writer.add_scalar(tag='train_wavelets_scales/weights/' + '_pl_'+ str(pool_no) + 'no_'+ str(wno) ,
+                                              scalar_value=pool.scales_weights[wno],
+                                              global_step=n_iter)
+                        # print('stop')
+                                             
 
 def test(epoch):
     global best_acc
