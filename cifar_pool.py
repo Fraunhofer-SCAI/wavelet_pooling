@@ -162,8 +162,9 @@ def train(epoch):
                                       scalar_value=pool.wavelet.filt_bank_orthogonality_loss(),
                                       global_step=n_iter)
 
-                    if pool.use_scale_weights:
+                    if pool.use_scale_weights is True:
                         writer.add_histogram('train_wavelets/scale_weights_'+ str(pool_no), pool.scales_weights)
+                        print('stop')
 
 def test(epoch):
     global best_acc
