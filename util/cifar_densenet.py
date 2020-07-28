@@ -11,7 +11,12 @@ def get_pool(pool_type):
     if pool_type == 'adaptive_wavelet':
         degree = 1
         size = degree*2
-        wavelet = SoftOrthogonalWavelet( # ProductFilter(
+        # wavelet = SoftOrthogonalWavelet(
+        #             torch.rand(size, requires_grad=True)*2. - 1.,
+        #             torch.rand(size, requires_grad=True)*2. - 1.,
+        #             torch.rand(size, requires_grad=True)*2. - 1.,
+        #             torch.rand(size, requires_grad=True)*2. - 1.)
+        wavelet = ProductFilter(
                     torch.rand(size, requires_grad=True)*2. - 1.,
                     torch.rand(size, requires_grad=True)*2. - 1.,
                     torch.rand(size, requires_grad=True)*2. - 1.,
