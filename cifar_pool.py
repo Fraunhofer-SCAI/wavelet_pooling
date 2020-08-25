@@ -1,6 +1,7 @@
 '''Train CIFAR10 with PyTorch.'''
 # import pywt
 import torch
+from datetime import datetime
 import torch.nn as nn
 # import torch.nn.functional as F
 import torch.optim as optim
@@ -18,10 +19,16 @@ from util.cifar_densenet import densenet_cifar
 
 parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
+parser.add_argument('--epochs', default=200, type=int, help='Number of passes\
+                     through the data entire set.')
 parser.add_argument('--resume', '-r', action='store_true',
                     help='resume from checkpoint')
 parser.add_argument('--pool', type=str, default='adaptive_wavelet',
-                    help='Choose the pooling mode, adaptive_wavelet, wavelet, avg, max')
+                    help='Choose the pooling mode, adaptive_wavelet,\
+                           wavelet, avg, max')
+parser.add_argument('--checkpoint_dir', type=str, default='checkpoint',
+                    help='Name of the folder for the log and checkpoint\
+                          files.')
 parser.add_argument('--log', action='store_true', default=True,
                     help='Turns on tensorboard logging.')
 
@@ -33,7 +40,8 @@ best_acc = 0  # best test accuracy
 start_epoch = 0  # start from epoch 0 or last checkpoint epoch
 
 if args.log:
-    writer = SummaryWriter(comment=args.pool)
+    writer = SummaryWriter(log_dir=args.checkpoint_dir + '_' + args.pool
+                           + '/' + str(datetime.now()))
 
 
 # Data
@@ -71,13 +79,13 @@ net = densenet_cifar(args.pool)
 net = net.to(device)
 if device == 'cuda':
     # net = torch.nn.DataParallel(net)
-    cudnn.benchmark = True
+    cudnn.benchmark = Trueargs.pool
 
 if args.resume:
     # Load checkpoint.
     print('==> Resuming from checkpoint..')
-    assert os.path.isdir('checkpoint_' + args.pool), 'No Checkpoint directory!'
-    checkpoint = torch.load('./checkpoint_'
+    assert os.path.isdir(args.checkpoint_dir + '_' + args.pool), 'No Checkpoint directory!'
+    checkpoint = torch.load('./' + args.checkpoint_dir + '_'
                             + args.pool + '/ckpt.pth')
     net.load_state_dict(checkpoint['net'])
     best_acc = checkpoint['acc']
@@ -88,7 +96,7 @@ else:
         print('pretraining wavelets')
         wavelets = net.get_wavelets()
         for wavelet in wavelets:
-            optimizer = optim.SGD(wavelet.parameters(), lr=0.01)
+            optimizer = optim.SGD(wavelet.parameters(), lr=args.lr)
             print('init wvl loss', wavelet.wavelet_loss().item())
             for i in range(200):
                 optimizer.zero_grad()
@@ -133,35 +141,50 @@ def train(epoch):
 
         progress_bar(batch_idx, len(trainloader),
                      'Train-Loss: %.3f | wvl %.5f | Acc: %.3f%% (%d/%d)'
-                     % (train_loss/(batch_idx+1), wvl_loss/(batch_idx+1), 100.*correct/total,
-                        correct, total))
-        
+                     % (train_loss/(batch_idx+1), wvl_loss/(batch_idx+1),
+                        100.*correct/total, correct, total))
+
         if args.log:
             n_iter = epoch*len(trainloader) + batch_idx
             # TODO add more to the tensorboard log.
-            writer.add_scalar(tag='train/wvl_loss', scalar_value=net.get_wavelet_loss().item(), global_step=n_iter)
-            writer.add_scalar(tag='train/cross_entropy_loss', scalar_value=closs.item(), global_step=n_iter)
+            writer.add_scalar(tag='train/wvl_loss',
+                              scalar_value=net.get_wavelet_loss().item(),
+                              global_step=n_iter)
+            writer.add_scalar(tag='train/cross_entropy_loss',
+                              scalar_value=closs.item(),
+                              global_step=n_iter)
 
             if args.pool == 'adaptive_wavelet':
                 wavelets = net.get_wavelets()
                 for wavelet_no, wavelet in enumerate(wavelets):
-                    writer.add_scalar(tag='train_wavelets/ac_prod_filt_loss/w_' + str(wavelet_no),
-                                      scalar_value=wavelet.pf_alias_cancellation_loss()[0], global_step=n_iter)
-                    writer.add_scalar(tag='train_wavelets/ac_conv_loss/w_' + str(wavelet_no),
-                                      scalar_value=wavelet.alias_cancellation_loss()[0],
-                                      global_step=n_iter)
-                    writer.add_scalar(tag='train_wavelets/pr_loss/w_' + str(wavelet_no),
-                                      scalar_value=wavelet.perfect_reconstruction_loss()[0],
-                                      global_step=n_iter)
+                    writer.add_scalar(
+                        tag='train_wavelets/ac_prod_filt_loss/w_'
+                            + str(wavelet_no),
+                        scalar_value=wavelet.pf_alias_cancellation_loss()[0],
+                        global_step=n_iter)
+                    writer.add_scalar(
+                        tag='train_wavelets/ac_conv_loss/w_'
+                            + str(wavelet_no),
+                        scalar_value=wavelet.alias_cancellation_loss()[0],
+                        global_step=n_iter)
+                    writer.add_scalar(
+                        tag='train_wavelets/pr_loss/w_'
+                            + str(wavelet_no),
+                        scalar_value=wavelet.perfect_reconstruction_loss()[0],
+                        global_step=n_iter)
 
                     if type(wavelet) is SoftOrthogonalWavelet:
-                        writer.add_scalar(tag='train_wavelets/orth_strang/w_' + str(wavelet_no),
-                                      scalar_value=wavelet.rec_lo_orthogonality_loss(),
-                                      global_step=n_iter)
-                        writer.add_scalar(tag='train_wavelets/orth_harbo/w_' + str(wavelet_no),
-                                      scalar_value=wavelet.filt_bank_orthogonality_loss(),
-                                      global_step=n_iter)
-
+                        writer.add_scalar(
+                            tag='train_wavelets/orth_strang/w_'
+                                + str(wavelet_no),
+                            scalar_value=wavelet.rec_lo_orthogonality_loss(),
+                            global_step=n_iter)
+                        writer.add_scalar(
+                            tag='train_wavelets/orth_harbo/w_'
+                            + str(wavelet_no),
+                            scalar_value=wavelet.filt_bank_orthogonality_loss(),
+                            global_step=n_iter)
+            # break
 
 
 def test(epoch):
@@ -186,14 +209,15 @@ def test(epoch):
                          % (test_loss/(batch_idx+1),
                             100.*correct/total, correct, total))
 
-
         if args.log:
             n_iter = epoch*len(trainloader) + batch_idx
             # TODO add more to the tensorboard log.
-            writer.add_scalar(tag='test/acc', scalar_value=100.*correct/total, global_step=n_iter)
-            writer.add_scalar(tag='test/loss', scalar_value=test_loss/batch_idx+1, global_step=n_iter)
-
-
+            writer.add_scalar(tag='test/acc',
+                              scalar_value=100.*correct/total,
+                              global_step=n_iter)
+            writer.add_scalar(tag='test/loss',
+                              scalar_value=test_loss/batch_idx+1,
+                              global_step=n_iter)
 
     # Save checkpoint.
     acc = 100.*correct/total
@@ -204,13 +228,14 @@ def test(epoch):
             'acc': acc,
             'epoch': epoch,
         }
-        if not os.path.isdir('checkpoint_' + args.pool):
-            os.mkdir('checkpoint_' + args.pool)
-        torch.save(state, './checkpoint_' + args.pool + '/ckpt.pth')
+        if not os.path.isdir(args.checkpoint_dir + '_' + args.pool):
+            os.mkdir(args.checkpoint_dir + '_' + args.pool)
+        torch.save(state, './' + args.checkpoint_dir
+                   + '_' + args.pool + '/ckpt.pth')
         best_acc = acc
 
 
-for epoch in range(start_epoch, start_epoch+200):
+for epoch in range(start_epoch, start_epoch+args.epochs):
     # with torch.autograd.detect_anomaly():
     train(epoch)
     test(epoch)
