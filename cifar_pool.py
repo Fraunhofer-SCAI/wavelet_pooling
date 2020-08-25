@@ -79,7 +79,8 @@ net = densenet_cifar(args.pool)
 net = net.to(device)
 if device == 'cuda':
     # net = torch.nn.DataParallel(net)
-    cudnn.benchmark = Trueargs.pool
+    cudnn.benchmark = True
+    args.pool
 
 if args.resume:
     # Load checkpoint.
