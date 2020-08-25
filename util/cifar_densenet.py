@@ -5,13 +5,18 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from util.wavelet_pool2d import StaticWaveletPool2d, AdaptiveWaveletPool2d
-from util.learnable_wavelets import SoftOrthogonalWavelet
+from util.learnable_wavelets import SoftOrthogonalWavelet, ProductFilter
 
 def get_pool(pool_type):
     if pool_type == 'adaptive_wavelet':
         degree = 1
         size = degree*2
-        wavelet = SoftOrthogonalWavelet( # ProductFilter(
+        # wavelet = SoftOrthogonalWavelet(
+        #             torch.rand(size, requires_grad=True)*2. - 1.,
+        #             torch.rand(size, requires_grad=True)*2. - 1.,
+        #             torch.rand(size, requires_grad=True)*2. - 1.,
+        #             torch.rand(size, requires_grad=True)*2. - 1.)
+        wavelet = ProductFilter(
                     torch.rand(size, requires_grad=True)*2. - 1.,
                     torch.rand(size, requires_grad=True)*2. - 1.,
                     torch.rand(size, requires_grad=True)*2. - 1.,
@@ -117,6 +122,14 @@ class DenseNet(nn.Module):
         else:
             return torch.tensor(0.)
 
+    def get_pool(self):
+        if self.pool_type == 'adaptive_wavelet':
+            return [self.trans1.pool,
+                    self.trans2.pool,
+                    self.trans3.pool]
+        else:
+            return []
+
     def get_wavelets(self):
         if self.pool_type == 'adaptive_wavelet':
             return [self.trans1.pool.wavelet,
@@ -124,8 +137,6 @@ class DenseNet(nn.Module):
                     self.trans3.pool.wavelet]
         else:
             return []
-
-
 
 def DenseNet121():
     return DenseNet(Bottleneck, [6, 12, 24, 16], growth_rate=32)

@@ -143,7 +143,6 @@ def conv_fwt_2d(data, wavelet, scales: int = None) -> list:
     dec_lo, dec_hi, _, _ = get_filter_tensors(wavelet, flip=True,
                                               device=data.device)
     filt_len = dec_lo.shape[-1]
-
     dec_filt = construct_2d_filt(lo=dec_lo, hi=dec_hi)
 
     if scales is None:
