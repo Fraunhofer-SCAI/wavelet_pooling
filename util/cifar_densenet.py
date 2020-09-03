@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from util.wavelet_pool2d import StaticWaveletPool2d, AdaptiveWaveletPool2d
 from util.learnable_wavelets import SoftOrthogonalWavelet, ProductFilter
 
+
 def get_pool(pool_type):
     if pool_type == 'adaptive_wavelet':
         degree = 1

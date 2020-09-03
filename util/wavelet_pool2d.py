@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from abc import ABC
+# from abc import ABC
 from util.conv_transform import conv_fwt_2d, conv_ifwt_2d
 
 
@@ -29,7 +29,9 @@ class WaveletPool2d(nn.Module):
         # TODO: add for higher degree wavelets.
         # fold_channels = torch.nn.functional_pad(fold_channels, [padt, padb, padl, padr])
 
-        coeffs = conv_fwt_2d(fold_channels, wavelet=self.wavelet, scales=self.scales)
+        coeffs = conv_fwt_2d(fold_channels,
+                             wavelet=self.wavelet,
+                             scales=self.scales)
         # rec = conv_ifwt_2d(coeffs, wavelet=self.wavelet)
         # rec = rec.reshape(img.shape)
         # err = torch.mean(torch.abs(img - rec))
@@ -43,9 +45,10 @@ class WaveletPool2d(nn.Module):
                     weight_pos += 1
                 elif type(coeff) is tuple:
                     assert len(coeff) == 3, '2d fwt'
-                    pool_coeffs.append((coeff[0]*self.scales_weights[weight_pos],
-                                        coeff[1]*self.scales_weights[weight_pos + 1],
-                                        coeff[2]*self.scales_weights[weight_pos + 2]))
+                    pool_coeffs.append(
+                        (coeff[0]*self.scales_weights[weight_pos],
+                         coeff[1]*self.scales_weights[weight_pos + 1],
+                         coeff[2]*self.scales_weights[weight_pos + 2]))
                     weight_pos += 3
 
         else:
@@ -72,11 +75,16 @@ class WaveletPool2d(nn.Module):
 
 
 class StaticWaveletPool2d(WaveletPool2d):
-    def __init__(self, wavelet):
+    def __init__(self, wavelet, use_scale_weights=False, scales=2):
         super().__init__()
         self.wavelet = wavelet
-        self.use_scale_weights = False
-        self.scales = 2
+        self.use_scale_weights = use_scale_weights
+        self.scales = scales
+
+        if self.use_scale_weights:
+            weight_no = (self.scales - 1)*3 + 1
+            self.scales_weights = torch.nn.Parameter(torch.ones([weight_no]))
+
 
 class AdaptiveWaveletPool2d(WaveletPool2d):
     def __init__(self, wavelet, use_scale_weights=True, scales=2):

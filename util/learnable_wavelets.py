@@ -251,18 +251,21 @@ class HardOrthogonalWavelet(WaveletFilter, torch.nn.Module):
         return self.rec_lo_orthogonality_loss()
 
 
-
 class PowerWavelet(WaveletFilter, torch.nn.Module):
-    def __init__(self, init_alpha: torch.tensor=torch.tensor(-1./2.)):
+    def __init__(self, init_alpha: torch.tensor = torch.tensor(-1./2.)):
         self.alpha = init_alpha
 
     @property
     def filter_bank(self):
         two = torch.tensor(2.)
-        return torch.stack([torch.pow(two, self.alpha), torch.pow(two, self.alpha)]), \
-               torch.stack([-torch.pow(two, self.alpha), torch.pow(two, self.alpha)]), \
-               torch.stack([torch.pow(two, -self.alpha), torch.pow(two, -self.alpha)]), \
-               torch.stack([torch.pow(two, -self.alpha), -torch.pow(two, -self.alpha)])
+        return torch.stack([torch.pow(two, self.alpha),
+                            torch.pow(two, self.alpha)]), \
+            torch.stack([-torch.pow(two, self.alpha),
+                         torch.pow(two, self.alpha)]), \
+            torch.stack([torch.pow(two, -self.alpha),
+                         torch.pow(two, -self.alpha)]), \
+            torch.stack([torch.pow(two, -self.alpha),
+                         -torch.pow(two, -self.alpha)])
                 
     def __len__(self):
         return 2
@@ -274,7 +277,6 @@ class PowerWavelet(WaveletFilter, torch.nn.Module):
 
     def wavelet_loss(self):
         return self.product_filter_loss()
-
 
 
 if __name__ == '__main__':
