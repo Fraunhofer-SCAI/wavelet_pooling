@@ -96,7 +96,7 @@ def main():
     # create model
     model = dn.DenseNet3(args.layers, 10, args.growth, reduction=args.reduce,
                          bottleneck=args.bottleneck, dropRate=args.droprate,
-                         pool_type='adaptive_wavelet')
+                         pool_type=args.pooling_type)
     
     # get the number of model parameters
     print('Number of model parameters: {}'.format(
