@@ -120,8 +120,8 @@ def main():
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
     else:
-        print('pretraining wavelets')
         if model.pool_type == 'adaptive_wavelet':
+            print('pretraining wavelets')
             wavelets = model.get_wavelets()
             for wavelet in wavelets:
                 optimizer = torch.optim.SGD(wavelet.parameters(), lr=args.lr)
