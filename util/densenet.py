@@ -33,7 +33,7 @@ def get_pool(pool_type):
         print('max pool')
         return nn.MaxPool2d(2)
     elif pool_type == 'avg':
-        print('static wavelet')
+        print('avg wavelet')
         return nn.AvgPool2d(2)
     else:
         raise NotImplementedError
@@ -140,8 +140,11 @@ class DenseNet3(nn.Module):
         # global average pooling and classifier
         self.bn1 = nn.BatchNorm2d(in_planes)
         self.relu = nn.ReLU(inplace=True)
-        self.fc = nn.Linear(in_planes, num_classes)
-        self.in_planes = in_planes
+        
+        # self.in_planes = in_planes
+        self.in_planes = in_planes*4*4
+        self.final_pool = get_pool(self.pool_type)
+        self.fc = nn.Linear(self.in_planes, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -159,14 +162,16 @@ class DenseNet3(nn.Module):
         out = self.trans2(self.block2(out))
         out = self.block3(out)
         out = self.relu(self.bn1(out))
-        out = F.avg_pool2d(out, 8)
+        # out = F.avg_pool2d(out, 8)
+        out = self.final_pool(out)
         out = out.view(-1, self.in_planes)
         return self.fc(out)
 
     def get_wavelet_loss(self):
         if self.pool_type == 'adaptive_wavelet':
             return self.trans1.pool.wavelet.wavelet_loss() + \
-                   self.trans2.pool.wavelet.wavelet_loss()
+                   self.trans2.pool.wavelet.wavelet_loss() + \
+                   self.final_pool.wavelet.wavelet_loss()
         else:
             return torch.tensor(0.)
 
@@ -174,13 +179,15 @@ class DenseNet3(nn.Module):
         if self.pool_type == 'adaptive_wavelet' \
            or self.pool_type == 'scaled_wavelet':
             return [self.trans1.pool,
-                    self.trans2.pool]
+                    self.trans2.pool,
+                    self.final_pool]
         else:
             return []
 
     def get_wavelets(self):
         if self.pool_type == 'adaptive_wavelet':
             return [self.trans1.pool.wavelet,
-                    self.trans2.pool.wavelet]
+                    self.trans2.pool.wavelet,
+                    self.final_pool.wavelet]
         else:
             return []
