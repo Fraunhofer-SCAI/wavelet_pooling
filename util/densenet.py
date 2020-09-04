@@ -9,7 +9,7 @@ from util.learnable_wavelets import SoftOrthogonalWavelet, ProductFilter
 
 def get_pool(pool_type):
     if pool_type == 'adaptive_wavelet':
-        print('creating adaptive wavelet')
+        print('scaled adaptive wavelet')
         degree = 1
         size = degree*2
         # wavelet = SoftOrthogonalWavelet(
@@ -22,10 +22,13 @@ def get_pool(pool_type):
                     torch.rand(size, requires_grad=True)*2. - 1.,
                     torch.rand(size, requires_grad=True)*2. - 1.,
                     torch.rand(size, requires_grad=True)*2. - 1.)
-        return AdaptiveWaveletPool2d(wavelet=wavelet)
+        return AdaptiveWaveletPool2d(wavelet=wavelet, use_scale_weights=True)
     elif pool_type == 'wavelet':
         print('static wavelet')
-        return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'))
+        return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'), use_scale_weights=False)
+    elif pool_type == 'scaled_wavelet':
+        print('scaled static wavelet')
+        return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'), use_scale_weights=True)        
     elif pool_type == 'max':
         print('max pool')
         return nn.MaxPool2d(2)
@@ -168,7 +171,8 @@ class DenseNet3(nn.Module):
             return torch.tensor(0.)
 
     def get_pool(self):
-        if self.pool_type == 'adaptive_wavelet':
+        if self.pool_type == 'adaptive_wavelet' \
+           or self.pool_type == 'scaled_wavelet':
             return [self.trans1.pool,
                     self.trans2.pool]
         else:

@@ -50,7 +50,6 @@ class WaveletPool2d(nn.Module):
                          coeff[1]*self.scales_weights[weight_pos + 1],
                          coeff[2]*self.scales_weights[weight_pos + 2]))
                     weight_pos += 3
-
         else:
             pool_coeffs = coeffs[:-1]
 
