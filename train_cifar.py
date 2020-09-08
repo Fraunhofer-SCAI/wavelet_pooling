@@ -51,7 +51,7 @@ parser.add_argument('--pooling_type', default='scaled_wavelet', type=str,
                     help='pooling type to use')
 parser.add_argument('--tensorboard',
                     help='Log progress to TensorBoard', action='store_true',
-                    default=True)
+                    default=False)
 parser.set_defaults(bottleneck=True)
 parser.set_defaults(augment=True)
 

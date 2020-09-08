@@ -6,7 +6,9 @@ checkpoint_max/
 checkpoint_avg/
 checkpoint_adaptive_wavelet/
 out/
+out2/
 runs/
+log/
 
 # queue files
 *.swp
