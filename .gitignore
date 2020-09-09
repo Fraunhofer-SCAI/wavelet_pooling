@@ -9,6 +9,7 @@ out/
 out2/
 runs/
 log/
+run_auersberg/runs
 
 # queue files
 *.swp
