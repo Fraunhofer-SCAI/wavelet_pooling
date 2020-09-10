@@ -42,7 +42,7 @@ def get_pool(pool_type):
         print('max pool')
         return nn.MaxPool2d(2)
     elif pool_type == 'avg':
-        print('avg wavelet')
+        print('avg pool')
         return nn.AvgPool2d(2)
     else:
         raise NotImplementedError
