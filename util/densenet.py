@@ -8,27 +8,36 @@ from util.learnable_wavelets import SoftOrthogonalWavelet, ProductFilter
 
 
 def get_pool(pool_type):
-    if pool_type == 'adaptive_wavelet':
+    if pool_type == 'scaled_adaptive_wavelet':
         print('scaled adaptive wavelet')
         degree = 1
         size = degree*2
-        # wavelet = SoftOrthogonalWavelet(
-        #             torch.rand(size, requires_grad=True)*2. - 1.,
-        #             torch.rand(size, requires_grad=True)*2. - 1.,
-        #             torch.rand(size, requires_grad=True)*2. - 1.,
-        #             torch.rand(size, requires_grad=True)*2. - 1.)
         wavelet = ProductFilter(
                     torch.rand(size, requires_grad=True)*2. - 1.,
                     torch.rand(size, requires_grad=True)*2. - 1.,
                     torch.rand(size, requires_grad=True)*2. - 1.,
                     torch.rand(size, requires_grad=True)*2. - 1.)
-        return AdaptiveWaveletPool2d(wavelet=wavelet, use_scale_weights=True)
+        return AdaptiveWaveletPool2d(wavelet=wavelet,
+                                     use_scale_weights=True)
+    if pool_type == 'adaptive_wavelet':
+        print('adaptive wavelet')
+        degree = 1
+        size = degree*2
+        wavelet = ProductFilter(
+                    torch.rand(size, requires_grad=True)*2. - 1.,
+                    torch.rand(size, requires_grad=True)*2. - 1.,
+                    torch.rand(size, requires_grad=True)*2. - 1.,
+                    torch.rand(size, requires_grad=True)*2. - 1.)
+        return AdaptiveWaveletPool2d(wavelet=wavelet,
+                                     use_scale_weights=False)
     elif pool_type == 'wavelet':
         print('static wavelet')
-        return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'), use_scale_weights=False)
+        return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
+                                   use_scale_weights=False)
     elif pool_type == 'scaled_wavelet':
         print('scaled static wavelet')
-        return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'), use_scale_weights=True)        
+        return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
+                                   use_scale_weights=True)
     elif pool_type == 'max':
         print('max pool')
         return nn.MaxPool2d(2)
