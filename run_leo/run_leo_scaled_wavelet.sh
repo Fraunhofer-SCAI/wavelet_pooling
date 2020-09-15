@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --job-name=swpool2
-#SBATCH --output=runs/s_wavelet2.txt
+#SBATCH --output=runs/swavelet2.txt
 #SBATCH -p gpu
 #SBATCH --gres gpu:v100:1
 #SBATCH -n 1

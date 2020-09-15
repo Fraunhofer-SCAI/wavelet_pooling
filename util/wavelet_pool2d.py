@@ -27,7 +27,8 @@ class WaveletPool2d(nn.Module):
 
         padr, padl, padt, padb = self.compute_padding()
         # TODO: add for higher degree wavelets.
-        # fold_channels = torch.nn.functional_pad(fold_channels, [padt, padb, padl, padr])
+        # fold_channels = torch.nn.functional_pad(fold_channels,
+        #                                         [padt, padb, padl, padr])
 
         coeffs = conv_fwt_2d(fold_channels,
                              wavelet=self.wavelet,
@@ -74,7 +75,7 @@ class WaveletPool2d(nn.Module):
 
 
 class StaticWaveletPool2d(WaveletPool2d):
-    def __init__(self, wavelet, use_scale_weights=False, scales=2):
+    def __init__(self, wavelet, use_scale_weights=False, scales=3):
         super().__init__()
         self.wavelet = wavelet
         self.use_scale_weights = use_scale_weights
@@ -86,7 +87,7 @@ class StaticWaveletPool2d(WaveletPool2d):
 
 
 class AdaptiveWaveletPool2d(WaveletPool2d):
-    def __init__(self, wavelet, use_scale_weights=True, scales=2):
+    def __init__(self, wavelet, use_scale_weights=True, scales=3):
         super().__init__()
         self.wavelet = wavelet
         self.use_scale_weights = use_scale_weights

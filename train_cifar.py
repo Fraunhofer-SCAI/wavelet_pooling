@@ -52,6 +52,9 @@ parser.add_argument('--pooling_type', default='scaled_wavelet', type=str,
 parser.add_argument('--tensorboard',
                     help='Log progress to TensorBoard', action='store_true',
                     default=False)
+parser.add_argument('--cpu',
+                    help='Log progress to TensorBoard', action='store_true',
+                    default=False)
 parser.set_defaults(bottleneck=True)
 parser.set_defaults(augment=True)
 
@@ -107,7 +110,8 @@ def main():
     # for training on multiple GPUs. 
     # Use CUDA_VISIBLE_DEVICES=0,1 to specify which GPUs to use
     # model = torch.nn.DataParallel(model).cuda()
-    model = model.cuda()
+    if not args.cpu:
+        model = model.cuda()
 
     # optionally resume from a checkpoint
     if args.resume:
@@ -139,7 +143,10 @@ def main():
     cudnn.benchmark = True
 
     # define loss function (criterion) and pptimizer
-    criterion = nn.CrossEntropyLoss().cuda()
+    if not args.cpu:
+        criterion = nn.CrossEntropyLoss().cuda()
+    else:
+        criterion = nn.CrossEntropyLoss()
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
                                 nesterov=True,
@@ -178,8 +185,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
     end = time.time()
     for i, (input, target) in enumerate(train_loader):
-        target = target.cuda()
-        input = input.cuda()
+        if not args.cpu:
+            target = target.cuda()
+            input = input.cuda()
         input_var = torch.autograd.Variable(input)
         target_var = torch.autograd.Variable(target)
 
@@ -262,6 +270,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
                             global_step=epoch)
                     # print('stop')
 
+
 def validate(val_loader, model, criterion, epoch):
     """Perform validation on the validation set"""
     batch_time = AverageMeter()
@@ -273,8 +282,9 @@ def validate(val_loader, model, criterion, epoch):
 
     end = time.time()
     for i, (input, target) in enumerate(val_loader):
-        target = target.cuda(non_blocking=True)
-        input = input.cuda()
+        if not args.cpu:
+            target = target.cuda(non_blocking=True)
+            input = input.cuda()
         with torch.no_grad():
             input_var = torch.autograd.Variable(input)
             target_var = torch.autograd.Variable(target)

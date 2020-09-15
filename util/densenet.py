@@ -48,7 +48,6 @@ def get_pool(pool_type):
         raise NotImplementedError
 
 
-
 class BasicBlock(nn.Module):
     def __init__(self, in_planes, out_planes, dropRate=0.0):
         super(BasicBlock, self).__init__()
@@ -57,11 +56,13 @@ class BasicBlock(nn.Module):
         self.conv1 = nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=1,
                                padding=1, bias=False)
         self.droprate = dropRate
+
     def forward(self, x):
         out = self.conv1(self.relu(self.bn1(x)))
         if self.droprate > 0:
             out = F.dropout(out, p=self.droprate, training=self.training)
         return torch.cat([x, out], 1)
+
 
 class BottleneckBlock(nn.Module):
     def __init__(self, in_planes, out_planes, dropRate=0.0):
@@ -69,21 +70,24 @@ class BottleneckBlock(nn.Module):
         inter_planes = out_planes * 4
         self.bn1 = nn.BatchNorm2d(in_planes)
         self.relu = nn.ReLU(inplace=True)
-        self.conv1 = nn.Conv2d(in_planes, inter_planes, kernel_size=1, stride=1,
-                               padding=0, bias=False)
+        self.conv1 = nn.Conv2d(in_planes, inter_planes, kernel_size=1,
+                               stride=1, padding=0, bias=False)
         self.bn2 = nn.BatchNorm2d(inter_planes)
-        self.conv2 = nn.Conv2d(inter_planes, out_planes, kernel_size=3, stride=1,
-                               padding=1, bias=False)
+        self.conv2 = nn.Conv2d(inter_planes, out_planes, kernel_size=3,
+                               stride=1, padding=1, bias=False)
         self.droprate = dropRate
 
     def forward(self, x):
         out = self.conv1(self.relu(self.bn1(x)))
         if self.droprate > 0:
-            out = F.dropout(out, p=self.droprate, inplace=False, training=self.training)
+            out = F.dropout(out, p=self.droprate, inplace=False,
+                            training=self.training)
         out = self.conv2(self.relu(self.bn2(out)))
         if self.droprate > 0:
-            out = F.dropout(out, p=self.droprate, inplace=False, training=self.training)
+            out = F.dropout(out, p=self.droprate, inplace=False,
+                            training=self.training)
         return torch.cat([x, out], 1)
+
 
 class TransitionBlock(nn.Module):
     def __init__(self, in_planes, out_planes, dropRate=0.0, pool_type='wavelet'):
@@ -101,6 +105,7 @@ class TransitionBlock(nn.Module):
             out = F.dropout(out, p=self.droprate, inplace=False, training=self.training)
         return self.pool(out)
 
+
 class DenseBlock(nn.Module):
     def __init__(self, nb_layers, in_planes, growth_rate, block, dropRate=0.0):
         super(DenseBlock, self).__init__()
@@ -113,6 +118,7 @@ class DenseBlock(nn.Module):
 
     def forward(self, x):
         return self.layer(x)
+
 
 class DenseNet3(nn.Module):
     def __init__(self, depth, num_classes, growth_rate=12,
