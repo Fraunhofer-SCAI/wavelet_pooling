@@ -76,7 +76,7 @@ class WaveletPool2d(nn.Module):
 
     def get_scales_weights(self):
         if self.scales_weights is not None:
-            return self.self.scales_weights*self.scales_weights
+            return self.scales_weights*self.scales_weights
 
 
 class StaticWaveletPool2d(WaveletPool2d):
