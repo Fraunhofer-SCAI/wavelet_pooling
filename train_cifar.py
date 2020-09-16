@@ -265,7 +265,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
                     for wno, weight in enumerate(pool.get_scales_weights()):
                         writer.add_scalar(
                             tag='train_wavelets_scales/weights/' 
-                                + '_pl_' + str(pool_no) + 'no_' + str(wno),
+                                + 'pl_' + str(pool_no) + '_no_' + str(wno),
                             scalar_value=weight,
                             global_step=epoch)
                     # print('stop')
