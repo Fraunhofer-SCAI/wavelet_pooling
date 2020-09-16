@@ -42,14 +42,15 @@ class WaveletPool2d(nn.Module):
             weight_pos = 0
             for pos, coeff in enumerate(coeffs[:-1]):
                 if type(coeff) is torch.Tensor:
-                    pool_coeffs.append(coeff*self.scales_weights[weight_pos])
+                    pool_coeffs.append(
+                        coeff*self.get_scales_weights()[weight_pos])
                     weight_pos += 1
                 elif type(coeff) is tuple:
                     assert len(coeff) == 3, '2d fwt'
                     pool_coeffs.append(
-                        (coeff[0]*self.scales_weights[weight_pos],
-                         coeff[1]*self.scales_weights[weight_pos + 1],
-                         coeff[2]*self.scales_weights[weight_pos + 2]))
+                        (coeff[0]*self.get_scales_weights()[weight_pos],
+                         coeff[1]*self.get_scales_weights()[weight_pos + 1],
+                         coeff[2]*self.get_scales_weights()[weight_pos + 2]))
                     weight_pos += 3
         else:
             pool_coeffs = coeffs[:-1]
@@ -72,6 +73,10 @@ class WaveletPool2d(nn.Module):
         rescale = torch.mean(img)/torch.mean(pool)
         pool = rescale*pool
         return pool
+
+    def get_scales_weights(self):
+        if self.scales_weights is not None:
+            return self.self.scales_weights*self.scales_weights
 
 
 class StaticWaveletPool2d(WaveletPool2d):
