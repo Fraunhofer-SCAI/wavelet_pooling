@@ -149,13 +149,14 @@ def main():
         criterion = nn.CrossEntropyLoss().cuda()
     else:
         criterion = nn.CrossEntropyLoss()
-    # optimizer = torch.optim.SGD(model.parameters(), args.lr,
-    #                             momentum=args.momentum,
-    #                             nesterov=True,
-    #                             weight_decay=args.weight_decay)
-    optimizer = torch.optim.RMSprop(model.parameters(),
-                                    args.lr,
-                                    momentum=args.momentum)
+    optimizer = torch.optim.SGD(model.parameters(), args.lr,
+                                momentum=args.momentum,
+                                nesterov=True,
+                                weight_decay=args.weight_decay)
+    # optimizer = torch.optim.RMSprop(model.parameters(),
+    #                                 args.lr,
+    #                                 momentum=args.momentum,
+    #                                 weight_decay=args.weight_decay)
     print('using :', optimizer)
 
     for epoch in range(args.start_epoch, args.epochs):
