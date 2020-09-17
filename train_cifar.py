@@ -61,8 +61,8 @@ parser.set_defaults(augment=True)
 best_prec1 = 0
 args = parser.parse_args()
 print(args)
-if args.tensorboard: 
-    #configure("runs/%s"%(args.name))
+if args.tensorboard:
+    # configure("runs/%s"%(args.name))
     writer = SummaryWriter(comment='_' + args.pooling_type)
 
 
@@ -70,9 +70,10 @@ def main():
     global args, best_prec1
 
     # Data loading code
-    normalize = transforms.Normalize(mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
-                                     std=[x/255.0 for x in [63.0, 62.1, 66.7]])
-    
+    normalize = transforms.Normalize(
+        mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
+        std=[x/255.0 for x in [63.0, 62.1, 66.7]])
+
     if args.augment:
         transform_train = transforms.Compose([
             transforms.RandomCrop(32, padding=4),
@@ -155,6 +156,7 @@ def main():
     optimizer = torch.optim.RMSprop(model.parameters(),
                                     args.lr,
                                     momentum=args.momentum)
+    print('using :', optimizer)
 
     for epoch in range(args.start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch)
