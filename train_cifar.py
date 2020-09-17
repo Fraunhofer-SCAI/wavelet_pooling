@@ -65,6 +65,7 @@ if args.tensorboard:
     #configure("runs/%s"%(args.name))
     writer = SummaryWriter(comment='_' + args.pooling_type)
 
+
 def main():
     global args, best_prec1
 
@@ -132,7 +133,7 @@ def main():
             for wavelet in wavelets:
                 optimizer = torch.optim.SGD(wavelet.parameters(), lr=args.lr)
                 print('init wvl loss', wavelet.wavelet_loss().item())
-                for i in range(200):
+                for i in range(50):
                     optimizer.zero_grad()
                     wvl_loss = wavelet.wavelet_loss()
                     wvl_loss.backward()
@@ -147,10 +148,13 @@ def main():
         criterion = nn.CrossEntropyLoss().cuda()
     else:
         criterion = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(model.parameters(), args.lr,
-                                momentum=args.momentum,
-                                nesterov=True,
-                                weight_decay=args.weight_decay)
+    # optimizer = torch.optim.SGD(model.parameters(), args.lr,
+    #                             momentum=args.momentum,
+    #                             nesterov=True,
+    #                             weight_decay=args.weight_decay)
+    optimizer = torch.optim.RMSprop(model.parameters(),
+                                    args.lr,
+                                    momentum=args.momentum)
 
     for epoch in range(args.start_epoch, args.epochs):
         adjust_learning_rate(optimizer, epoch)
@@ -264,7 +268,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
                 if pool.use_scale_weights is True:
                     for wno, weight in enumerate(pool.get_scales_weights()):
                         writer.add_scalar(
-                            tag='train_wavelets_scales/weights/' 
+                            tag='train_wavelets_scales/weights/'
                                 + 'pl_' + str(pool_no) + '_no_' + str(wno),
                             scalar_value=weight,
                             global_step=epoch)
