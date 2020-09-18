@@ -187,7 +187,8 @@ class DenseNet3(nn.Module):
         return self.fc(out)
 
     def get_wavelet_loss(self):
-        if self.pool_type == 'adaptive_wavelet':
+        if self.pool_type == 'adaptive_wavelet'\
+            or self.pool_type == 'scaled_adaptive_wavelet':
             return self.trans1.pool.wavelet.wavelet_loss() + \
                    self.trans2.pool.wavelet.wavelet_loss() + \
                    self.final_pool.wavelet.wavelet_loss()

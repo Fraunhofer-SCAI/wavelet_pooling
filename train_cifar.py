@@ -240,7 +240,8 @@ def train(train_loader, model, criterion, optimizer, epoch):
         writer.add_scalar('train_acc', top1.avg, epoch)
         writer.add_scalar('wvl', wlosses.avg, epoch)
 
-        if args.pooling_type == 'adaptive_wavelet':
+        if args.pooling_type == 'adaptive_wavelet' \
+          or args.pooling_type == 'scaled_adaptive_wavelet':
             pool_layers = model.get_pool()
             for pool_no, pool in enumerate(pool_layers):
                 writer.add_scalar(
@@ -269,7 +270,8 @@ def train(train_loader, model, criterion, optimizer, epoch):
                         global_step=epoch)
 
         if args.pooling_type == 'adaptive_wavelet' \
-           or args.pooling_type == 'scaled_wavelet':
+           or args.pooling_type == 'scaled_wavelet' \
+           or args.pooling_type == 'scaled_adaptive_wavelet':
             pool_layers = model.get_pool()
             for pool_no, pool in enumerate(pool_layers):
                 if pool.use_scale_weights is True:
