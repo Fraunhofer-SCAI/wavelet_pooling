@@ -27,7 +27,7 @@ parser.add_argument('-b', '--batch-size', default=64, type=int,
 parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
                     help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
+parser.add_argument('--weight-decay', '--wd', default=0., type=float,
                     help='weight decay (default: 1e-4)')
 parser.add_argument('--print-freq', '-p', default=10, type=int,
                     help='print frequency (default: 10)')
@@ -134,13 +134,13 @@ def main():
             for wavelet in wavelets:
                 optimizer = torch.optim.SGD(wavelet.parameters(), lr=args.lr)
                 print('init wvl loss', wavelet.wavelet_loss().item())
-                for i in range(50):
-                    optimizer.zero_grad()
-                    wvl_loss = wavelet.wavelet_loss()
-                    wvl_loss.backward()
-                    # print(i, wvl_loss.item())
-                    optimizer.step()
-                print('final wvl loss', wavelet.wavelet_loss().item())
+                # for i in range(10):
+                #      optimizer.zero_grad()
+                #      wvl_loss = wavelet.wavelet_loss()
+                #      wvl_loss.backward()
+                #      # print(i, wvl_loss.item())
+                #      optimizer.step()
+                # print('final wvl loss', wavelet.wavelet_loss().item())
 
     cudnn.benchmark = True
 
@@ -149,13 +149,17 @@ def main():
         criterion = nn.CrossEntropyLoss().cuda()
     else:
         criterion = nn.CrossEntropyLoss()
+    # if args.momentum > 0:
+    #     nesterov = True
+    # else:
+    #     nesterov = False
     # optimizer = torch.optim.SGD(model.parameters(), args.lr,
     #                             momentum=args.momentum,
-    #                             nesterov=True,
+    #                             nesterov=nesterov,
     #                             weight_decay=args.weight_decay)
-    optimizer = torch.optim.RMSprop(model.parameters(),
+    optimizer = torch.optim.Adam(model.parameters(),
                                     args.lr,
-                                    momentum=args.momentum,
+                                    # momentum=args.momentum,
                                     weight_decay=args.weight_decay)
     print('using :', optimizer)
 
