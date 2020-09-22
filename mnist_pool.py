@@ -11,30 +11,50 @@ from util.learnable_wavelets import ProductFilter, SoftOrthogonalWavelet
 # Test set: Average loss: 0.0295, Accuracy: 9905/10000 (99%)
 # Wavelet Test set: Test set: Average loss: 0.0400, Accuracy: 9898/10000 (99%)
 # maxPool: Test set: Average loss: 0.0216, Accuracy: 9944/10000 (99%)
-# avgPool: 9865
+# scaled wavelet: Accuracy: 9855/10000 (99%)
+# avgPool: 9849/10000
 
 
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
-        self.pool_type = 'max'
+        self.pool_type = 'scaled_wavelet'
 
-        def get_pool(pool_type):
-            if pool_type == 'wavelet':
-                print('wavelet pool')
-                return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
-                                           use_scale_weights=False, scales=2)
-            elif pool_type == 'adaptive_wavelet':
-                # random wavelet
-                print('adaptive pool')
-                wavelet = ProductFilter(  # ProductFilter,SoftOrthogonalWavelet
-                    torch.rand(2, requires_grad=True),
-                    torch.rand(2, requires_grad=True),
-                    torch.rand(2, requires_grad=True),
-                    torch.rand(2, requires_grad=True))
+        def get_pool(pool_type, scales=2):
+            if pool_type == 'scaled_adaptive_wavelet':
+                print('scaled adaptive wavelet')
+                degree = 1
+                size = degree*2
+                wavelet = ProductFilter(
+                            torch.rand(size, requires_grad=True)*2. - 1.,
+                            torch.rand(size, requires_grad=True)*2. - 1.,
+                            torch.rand(size, requires_grad=True)*2. - 1.,
+                            torch.rand(size, requires_grad=True)*2. - 1.)
                 return AdaptiveWaveletPool2d(wavelet=wavelet,
                                              use_scale_weights=True,
-                                             scales=2)
+                                             scales=scales)
+            if pool_type == 'adaptive_wavelet':
+                print('adaptive wavelet')
+                degree = 1
+                size = degree*2
+                wavelet = ProductFilter(
+                            torch.rand(size, requires_grad=True)*2. - 1.,
+                            torch.rand(size, requires_grad=True)*2. - 1.,
+                            torch.rand(size, requires_grad=True)*2. - 1.,
+                            torch.rand(size, requires_grad=True)*2. - 1.)
+                return AdaptiveWaveletPool2d(wavelet=wavelet,
+                                             use_scale_weights=False,
+                                             scales=scales)
+            elif pool_type == 'wavelet':
+                print('static wavelet')
+                return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
+                                           use_scale_weights=False,
+                                           scales=scales)
+            elif pool_type == 'scaled_wavelet':
+                print('scaled static wavelet')
+                return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
+                                           use_scale_weights=True,
+                                           scales=scales)
             elif pool_type == 'max':
                 print('max pool')
                 return nn.MaxPool2d(2)
@@ -46,10 +66,10 @@ class Net(nn.Module):
 
         self.conv1 = nn.Conv2d(1, 20, 5, padding=0, stride=1)
         self.norm1 = nn.BatchNorm2d(20)
-        self.pool1 = get_pool(self.pool_type)
+        self.pool1 = get_pool(self.pool_type, scales=3)
         self.conv2 = nn.Conv2d(20, 50, 5, padding=0, stride=1)
         self.norm2 = nn.BatchNorm2d(50)
-        self.pool2 = get_pool(self.pool_type)
+        self.pool2 = get_pool(self.pool_type, scales=2)
         self.conv3 = nn.Conv2d(50, 500, 4, padding=0, stride=1)
         self.relu = nn.ReLU()
         self.flatten = nn.Flatten(1)
@@ -79,16 +99,25 @@ class Net(nn.Module):
         return output
 
     def get_wavelet_loss(self):
-        if self.pool_type == 'adaptive_wavelet':
+        if self.pool_type == 'adaptive_wavelet'\
+            or self.pool_type == 'scaled_adaptive_wavelet':
             return self.pool1.wavelet.wavelet_loss() + \
                    self.pool2.wavelet.wavelet_loss()
         else:
-            return 0.
+            return torch.tensor(0.)
+
+    def get_pool(self):
+        if self.pool_type == 'adaptive_wavelet' \
+           or self.pool_type == 'scaled_wavelet' \
+           or self.pool_type == 'scaled_adaptive_wavelet':
+            return [self.pool1, self.pool2]
+        else:
+            return []
 
     def get_wavelets(self):
-        if self.pool_type == 'adaptive_wavelet':
-            return [self.pool1.wavelet,
-                    self.pool2.wavelet]
+        if self.pool_type == 'adaptive_wavelet' \
+           or self.pool_type == 'scaled_adaptive_wavelet':
+            return [self.pool1.wavelet, self.pool2.wavelet]
         else:
             return []
 
@@ -100,9 +129,10 @@ def train(args, model, device, train_loader, optimizer, epoch):
         optimizer.zero_grad()
         output = model(data)
         loss = F.nll_loss(output, target)
-        if model.pool_type == 'adaptive_wavelet':
-            wvl = model.get_wavelet_loss()
-            loss += wvl
+        if model.pool_type == 'adaptive_wavelet'\
+            or model.pool_type == 'scaled_adaptive_wavelet':
+                wvl = model.get_wavelet_loss()
+                loss += wvl
         else:
             wvl = 0.
 
@@ -147,9 +177,9 @@ def main():
     parser.add_argument('--test-batch-size', type=int, default=1000,
                         metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=16, metavar='N',
+    parser.add_argument('--epochs', type=int, default=15, metavar='N',
                         help='number of epochs to train (default: 14)')
-    parser.add_argument('--lr', type=float, default=1.0, metavar='LR',
+    parser.add_argument('--lr', type=float, default=1, metavar='LR',
                         help='learning rate (default: 1.0)')
     parser.add_argument('--gamma', type=float, default=0.7, metavar='M',
                         help='Learning rate step gamma (default: 0.7)')
@@ -186,12 +216,14 @@ def main():
     model = Net().to(device)
     print('init wvl loss:', model.get_wavelet_loss())
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
+    # optimizer = optim.RMSprop(model.parameters(), lr=args.lr)
 
-    if model.pool_type == 'adaptive_wavelet':
+    if model.pool_type == 'adaptive_wavelet'\
+        or model.pool_type == 'scaled_adaptive_wavelet':
         wavelets = model.get_wavelets()
         for wavelet in wavelets:
             print('init wvl loss', wavelet.wavelet_loss().item())
-            for i in range(200):
+            for i in range(250):
                 optimizer.zero_grad()
                 wvl_loss = wavelet.wavelet_loss()
                 wvl_loss.backward()

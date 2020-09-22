@@ -197,7 +197,8 @@ class DenseNet3(nn.Module):
 
     def get_pool(self):
         if self.pool_type == 'adaptive_wavelet' \
-           or self.pool_type == 'scaled_wavelet':
+           or self.pool_type == 'scaled_wavelet' \
+           or self.pool_type == 'scaled_adaptive_wavelet':
             return [self.trans1.pool,
                     self.trans2.pool,
                     self.final_pool]
