@@ -4,11 +4,11 @@ import datetime
 import subprocess
 subprocess.call('pwd')
 
-print('running mnist batch size sweep in parallel')
+print('running mnist parameter sweep in parallel')
 
 
-lr_lst = ['1.0', '0.9', '0.8', '0.7', '0.6', '0.5', '0.4', '0.3', '0.2', '0.1']
-gamma_lst = ['1.0', '0.99', '0.98', '0.97', '0.96', '0.95', '0.94', '0.93', '0.92', '0.91', '0.90']
+lr_lst = ['0.5', '0.25', '0.1', '0.05', '0.01', '0.005', '0.001']
+gamma_lst = ['1.0', '0.98', '0.95', '0.925', '0.90', '0.8']
 
 for lr in lr_lst:
     for gamma in gamma_lst:
