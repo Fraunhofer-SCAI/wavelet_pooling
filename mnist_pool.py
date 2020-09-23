@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
+from torch.utils.tensorboard.writer import SummaryWriter
 from util.wavelet_pool2d import StaticWaveletPool2d, AdaptiveWaveletPool2d
 from util.learnable_wavelets import ProductFilter, SoftOrthogonalWavelet
 # Test set: Average loss: 0.0295, Accuracy: 9905/10000 (99%)
@@ -16,9 +17,9 @@ from util.learnable_wavelets import ProductFilter, SoftOrthogonalWavelet
 
 
 class Net(nn.Module):
-    def __init__(self):
+    def __init__(self, pool_type):
         super(Net, self).__init__()
-        self.pool_type = 'scaled_wavelet'
+        self.pool_type = pool_type
 
         def get_pool(pool_type, scales=2):
             if pool_type == 'scaled_adaptive_wavelet':
@@ -122,7 +123,7 @@ class Net(nn.Module):
             return []
 
 
-def train(args, model, device, train_loader, optimizer, epoch):
+def train(args, writer, model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
@@ -148,9 +149,59 @@ def train(args, model, device, train_loader, optimizer, epoch):
                   \t lr: {:.6f} \t wvl: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item(), lr, wvl))
+    
+        # log to TensorBoard
+        if args.tensorboard:
+            #log_value('train_loss', losses.avg, epoch)
+            writer.add_scalar('train_loss', loss, batch_idx * len(data) + epoch*len(train_loader.dataset))
+            # log_value('train_acc', top1.avg, epoch)
+            writer.add_scalar('wvl', wvl, batch_idx * len(data) + epoch*len(train_loader.dataset))
+    
+            if args.pooling_type == 'adaptive_wavelet' \
+                or args.pooling_type == 'scaled_adaptive_wavelet':
+                pool_layers = model.get_pool()
+                for pool_no, pool in enumerate(pool_layers):
+                    writer.add_scalar(
+                        tag='train_wavelets_prod/ac_prod_filt_loss/pl_'
+                            + str(pool_no),
+                        scalar_value=pool.wavelet.pf_alias_cancellation_loss()[0],
+                        global_step=batch_idx * len(data) + epoch*len(train_loader.dataset))
+                    writer.add_scalar(
+                        tag='train_wavelets_prod/ac_conv_loss/pl_'
+                        + str(pool_no),
+                        scalar_value=pool.wavelet.alias_cancellation_loss()[0],
+                        global_step=batch_idx * len(data) + epoch*len(train_loader.dataset))
+                    writer.add_scalar(
+                        tag='train_wavelets_prod/pr_loss/pl_' + str(pool_no),
+                        scalar_value=pool.wavelet.perfect_reconstruction_loss()[0],
+                        global_step=batch_idx * len(data) + epoch*len(train_loader.dataset))
+                    if type(pool.wavelet) is SoftOrthogonalWavelet:
+                        writer.add_scalar(
+                            tag='train_wavelets_orth/strang/pl_'
+                                + str(pool_no),
+                            scalar_value=pool.wavelet.rec_lo_orthogonality_loss(),
+                            global_step=batch_idx * len(data) + epoch*len(train_loader.dataset))
+                        writer.add_scalar(
+                            tag='train_wavelets_orth/harbo/pl_' + str(pool_no),
+                            scalar_value=pool.wavelet.filt_bank_orthogonality_loss(),
+                            global_step=batch_idx * len(data) + epoch*len(train_loader.dataset))
+    
+            if args.pooling_type == 'adaptive_wavelet' \
+                or args.pooling_type == 'scaled_wavelet' \
+                or args.pooling_type == 'scaled_adaptive_wavelet':
+                pool_layers = model.get_pool()
+                for pool_no, pool in enumerate(pool_layers):
+                    if pool.use_scale_weights is True:
+                        for wno, weight in enumerate(pool.get_scales_weights()):
+                            writer.add_scalar(
+                                tag='train_wavelets_scales/weights/'
+                                    + 'pl_' + str(pool_no) + '_no_' + str(wno),
+                                scalar_value=weight,
+                                global_step=batch_idx * len(data) + epoch*len(train_loader.dataset))
+                        # print('stop')
 
 
-def test(model, device, test_loader):
+def test(args, writer, epoch, model, device, test_loader):
     model.eval()
     test_loss = 0
     correct = 0
@@ -168,6 +219,13 @@ def test(model, device, test_loader):
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
 
+    if args.tensorboard:
+        #log_value('train_loss', losses.avg, epoch)
+        writer.add_scalar('test_loss', test_loss, epoch)
+        # log_value('train_acc', top1.avg, epoch)
+        writer.add_scalar('test_correct', correct, epoch)
+        writer.add_scalar('test_accuracy', 100. * correct / len(test_loader.dataset) , epoch)
+
 
 def main():
     # Training settings
@@ -177,11 +235,11 @@ def main():
     parser.add_argument('--test-batch-size', type=int, default=1000,
                         metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=15, metavar='N',
+    parser.add_argument('--epochs', type=int, default=20, metavar='N',
                         help='number of epochs to train (default: 14)')
-    parser.add_argument('--lr', type=float, default=1, metavar='LR',
+    parser.add_argument('--lr', type=float, default=.01, metavar='LR',
                         help='learning rate (default: 1.0)')
-    parser.add_argument('--gamma', type=float, default=0.7, metavar='M',
+    parser.add_argument('--gamma', type=float, default=0.99, metavar='M',
                         help='Learning rate step gamma (default: 0.7)')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
@@ -191,12 +249,23 @@ def main():
                         help='how many batches to wait before logging')
     parser.add_argument('--save-model', action='store_true', default=False,
                         help='For Saving the current Model')
+    parser.add_argument('--tensorboard', help='Log progress to TensorBoard',
+                        action='store_true', default=False)
+    parser.add_argument('--pooling_type', default='max', type=str,
+                        help='pooling type to use')
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 
-    torch.manual_seed(args.seed)
+    print(args)
 
+    torch.manual_seed(args.seed)
     device = torch.device("cuda" if use_cuda else "cpu")
+
+    if args.tensorboard:
+        # configure("runs/%s"%(args.name))
+        writer = SummaryWriter(comment='_' + args.pooling_type)
+    else:
+        writer = None
 
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}
     train_loader = torch.utils.data.DataLoader(
@@ -213,10 +282,11 @@ def main():
                        ])),
         batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
-    model = Net().to(device)
+    model = Net(pool_type=args.pooling_type).to(device)
     print('init wvl loss:', model.get_wavelet_loss())
-    optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
+    # optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
     # optimizer = optim.RMSprop(model.parameters(), lr=args.lr)
+    optimizer = optim.SGD(model.parameters(), lr=args.lr)
 
     if model.pool_type == 'adaptive_wavelet'\
         or model.pool_type == 'scaled_adaptive_wavelet':
@@ -233,10 +303,16 @@ def main():
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
-        train(args, model, device, train_loader, optimizer, epoch)
+        if args.tensorboard:
+            for param_group in optimizer.param_groups:
+                writer.add_scalar('lr', param_group['lr'], epoch)
+        
+        train(args, writer, model, device, train_loader, optimizer, epoch=epoch)
         print('wvl loss:', model.get_wavelet_loss())
-        test(model, device, test_loader)
+        test(args, writer, epoch, model, device, test_loader)
         scheduler.step()
+
+
 
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")
