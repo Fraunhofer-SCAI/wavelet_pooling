@@ -263,7 +263,9 @@ def main():
 
     if args.tensorboard:
         # configure("runs/%s"%(args.name))
-        writer = SummaryWriter(comment='_' + args.pooling_type)
+        writer = SummaryWriter(comment='_' + args.pooling_type
+                                       + '_' + str(args.lr)
+                                       + '_' + str(args.gamma))
     else:
         writer = None
 
