@@ -7,7 +7,7 @@ subprocess.call('pwd')
 print('running mnist parameter sweep in parallel')
 
 
-lr_lst = ['0.5', '0.25', '0.1', '0.05', '0.01', '0.005', '0.001']
+lr_lst = ['0.8', '0.65', '0.5', '0.25']
 gamma_lst = ['1.0', '0.98', '0.95', '0.925', '0.90', '0.8']
 
 for lr in lr_lst:
@@ -28,7 +28,7 @@ for lr in lr_lst:
         with open("log/wavelet_" + "lr_" + str(lr) + '_gamma_' + str(gamma)
                   + '_' + time_str + ".txt", "w") as f:
             jobs.append(subprocess.Popen(['python', '../mnist_pool.py', '--lr', lr,
-                                          '--gamma', gamma, '--pooling_type', 'scaled_adaptive_wavelet',
+                                          '--gamma', gamma, '--pooling_type', 'wavelet',
                                           '--tensorboard'], stdout=f))
 
         for job in jobs:

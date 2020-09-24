@@ -11,6 +11,8 @@ runs/
 log/
 run_auersberg/runs
 run_auersberg/log
+run_auersberg/runs2
+run_auersberg/log2
 run_auersberg/q.log
 
 # queue files
