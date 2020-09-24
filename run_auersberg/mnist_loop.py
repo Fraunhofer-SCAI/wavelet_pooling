@@ -8,7 +8,7 @@ print('running mnist parameter sweep in parallel')
 
 
 lr_lst = ['0.8', '0.65', '0.5', '0.25']
-gamma_lst = ['1.0', '0.98', '0.95', '0.925', '0.90', '0.8']
+gamma_lst = ['1.0', '0.99', '0.98', '0.95', '0.925', '0.9']
 
 for lr in lr_lst:
     for gamma in gamma_lst:
