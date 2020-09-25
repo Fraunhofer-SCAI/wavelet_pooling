@@ -53,12 +53,10 @@ def get_pad(data_len, filt_len):
     #    = floor((data_len + filt_len - 1)/2)
     # (data_len + total_pad - filt_len) + 2 = data_len + filt_len - 1
     # total_pad = 2*filt_len - 3
-    padr = 0
-    padl = 0
-    if filt_len > 2:
-        # we pad half of the total requried padding on each side.
-        padr += (2 * filt_len - 3) // 2
-        padl += (2 * filt_len - 3) // 2
+
+    # we pad half of the total requried padding on each side.
+    padr = (2 * filt_len - 3) // 2
+    padl = (2 * filt_len - 3) // 2
 
     # pad to even singal length.
     if data_len % 2 != 0:
@@ -151,8 +149,7 @@ def conv_fwt_2d(data, wavelet, scales: int = None) -> list:
     result_lst = []
     res_ll = data
     for s in range(scales):
-        if filt_len > 2:
-            res_ll = fwt_pad2d(res_ll, wavelet)
+        res_ll = fwt_pad2d(res_ll, wavelet)
         res = torch.nn.functional.conv2d(res_ll, dec_filt, stride=2)
         res_ll, res_lh, res_hl, res_hh = torch.split(res, 1, 1)
         result_lst.append((res_lh, res_hl, res_hh))
@@ -234,7 +231,6 @@ def conv_fwt(data, wavelet, scales: int = None) -> list:
     result_lst = []
     res_lo = data
     for s in range(scales):
-        # if filt_len > 2:
         res_lo = fwt_pad(res_lo, wavelet)
         res = torch.nn.functional.conv1d(res_lo, filt, stride=2)
         res_lo, res_hi = torch.split(res, 1, 1)

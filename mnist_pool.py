@@ -10,61 +10,62 @@ from torch.utils.tensorboard.writer import SummaryWriter
 from util.wavelet_pool2d import StaticWaveletPool2d, AdaptiveWaveletPool2d
 from util.learnable_wavelets import ProductFilter, SoftOrthogonalWavelet
 # Test set: Average loss: 0.0295, Accuracy: 9905/10000 (99%)
-# Wavelet Test set: Test set: Average loss: 0.0400, Accuracy: 9898/10000 (99%)
-# maxPool: Test set: Average loss: 0.0216, Accuracy: 9944/10000 (99%)
+# Wavelet Test set: Average loss: 0.0335, Accuracy: 9908/10000 (99%)
+# Max pool: Test set: Average loss: 0.0402, Accuracy: 9915/10000 (99%)
 # scaled wavelet: Accuracy: 9855/10000 (99%)
-# avgPool: 9849/10000
+# avgPool: Test set: Average loss: 0.0332, Accuracy: 9913/10000 (99%)
+
+
+
+def get_pool(pool_type, scales=2):
+    if pool_type == 'scaled_adaptive_wavelet':
+        print('scaled adaptive wavelet')
+        degree = 1
+        size = degree*2
+        wavelet = ProductFilter(
+                    torch.rand(size, requires_grad=True)*2. - 1.,
+                    torch.rand(size, requires_grad=True)*2. - 1.,
+                    torch.rand(size, requires_grad=True)*2. - 1.,
+                    torch.rand(size, requires_grad=True)*2. - 1.)
+        return AdaptiveWaveletPool2d(wavelet=wavelet,
+                                        use_scale_weights=True,
+                                        scales=scales)
+    if pool_type == 'adaptive_wavelet':
+        print('adaptive wavelet')
+        degree = 1
+        size = degree*2
+        wavelet = ProductFilter(
+                    torch.rand(size, requires_grad=True)*2. - 1.,
+                    torch.rand(size, requires_grad=True)*2. - 1.,
+                    torch.rand(size, requires_grad=True)*2. - 1.,
+                    torch.rand(size, requires_grad=True)*2. - 1.)
+        return AdaptiveWaveletPool2d(wavelet=wavelet,
+                                        use_scale_weights=False,
+                                        scales=scales)
+    elif pool_type == 'wavelet':
+        print('static wavelet')
+        return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
+                                    use_scale_weights=False,
+                                    scales=scales)
+    elif pool_type == 'scaled_wavelet':
+        print('scaled static wavelet')
+        return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
+                                    use_scale_weights=True,
+                                    scales=scales)
+    elif pool_type == 'max':
+        print('max pool')
+        return nn.MaxPool2d(2)
+    elif pool_type == 'avg':
+        print('avg pool')
+        return nn.AvgPool2d(2)
+    else:
+        raise NotImplementedError
 
 
 class Net(nn.Module):
     def __init__(self, pool_type):
         super(Net, self).__init__()
         self.pool_type = pool_type
-
-        def get_pool(pool_type, scales=2):
-            if pool_type == 'scaled_adaptive_wavelet':
-                print('scaled adaptive wavelet')
-                degree = 1
-                size = degree*2
-                wavelet = ProductFilter(
-                            torch.rand(size, requires_grad=True)*2. - 1.,
-                            torch.rand(size, requires_grad=True)*2. - 1.,
-                            torch.rand(size, requires_grad=True)*2. - 1.,
-                            torch.rand(size, requires_grad=True)*2. - 1.)
-                return AdaptiveWaveletPool2d(wavelet=wavelet,
-                                             use_scale_weights=True,
-                                             scales=scales)
-            if pool_type == 'adaptive_wavelet':
-                print('adaptive wavelet')
-                degree = 1
-                size = degree*2
-                wavelet = ProductFilter(
-                            torch.rand(size, requires_grad=True)*2. - 1.,
-                            torch.rand(size, requires_grad=True)*2. - 1.,
-                            torch.rand(size, requires_grad=True)*2. - 1.,
-                            torch.rand(size, requires_grad=True)*2. - 1.)
-                return AdaptiveWaveletPool2d(wavelet=wavelet,
-                                             use_scale_weights=False,
-                                             scales=scales)
-            elif pool_type == 'wavelet':
-                print('static wavelet')
-                return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
-                                           use_scale_weights=False,
-                                           scales=scales)
-            elif pool_type == 'scaled_wavelet':
-                print('scaled static wavelet')
-                return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
-                                           use_scale_weights=True,
-                                           scales=scales)
-            elif pool_type == 'max':
-                print('max pool')
-                return nn.MaxPool2d(2)
-            elif pool_type == 'avg':
-                print('avg pool')
-                return nn.AvgPool2d(2)
-            else:
-                raise NotImplementedError
-
         self.conv1 = nn.Conv2d(1, 20, 5, padding=0, stride=1)
         self.norm1 = nn.BatchNorm2d(20)
         self.pool1 = get_pool(self.pool_type, scales=3)
@@ -119,6 +120,60 @@ class Net(nn.Module):
         if self.pool_type == 'adaptive_wavelet' \
            or self.pool_type == 'scaled_adaptive_wavelet':
             return [self.pool1.wavelet, self.pool2.wavelet]
+        else:
+            return []
+
+
+class LeNet5(nn.Module):
+    def __init__(self, pool_type):
+        super(LeNet5, self).__init__()
+        self.pool_type = pool_type
+        self.c1 = nn.Conv2d(in_channels=1, out_channels=6,
+                            kernel_size=5, padding=2, stride=1)
+        self.act1 = nn.ReLU()
+        self.s2 = get_pool(pool_type, scales=2)
+        self.c3 = nn.Conv2d(in_channels=6, out_channels=16,
+                            kernel_size=5, padding=0, stride=1)
+        self.act3 = nn.ReLU()
+        self.s4 = get_pool(pool_type, scales=2)
+        self.fc1 = nn.Linear(16*5*5, 120)
+        self.fc2 = nn.Linear(120, 84)
+        self.fc3 = nn.Linear(84,10)
+
+    def forward(self, x):
+        x = self.c1(x)
+        x = self.act1(x)
+        x = self.s2(x)
+        x = self.c3(x)
+        x = self.act3(x)
+        x = self.s4(x)
+        x = x.reshape(-1, 16*5*5)
+        x = self.fc1(x)
+        x = self.fc2(x)
+        x = self.fc3(x)
+        output = F.log_softmax(x, dim=1)
+        return output
+
+    def get_wavelet_loss(self):
+        if self.pool_type == 'adaptive_wavelet'\
+            or self.pool_type == 'scaled_adaptive_wavelet':
+            return self.s2.wavelet.wavelet_loss() + \
+                   self.s4.wavelet.wavelet_loss()
+        else:
+            return torch.tensor(0.)
+
+    def get_pool(self):
+        if self.pool_type == 'adaptive_wavelet' \
+           or self.pool_type == 'scaled_wavelet' \
+           or self.pool_type == 'scaled_adaptive_wavelet':
+            return [self.s2, self.s4]
+        else:
+            return []
+
+    def get_wavelets(self):
+        if self.pool_type == 'adaptive_wavelet' \
+           or self.pool_type == 'scaled_adaptive_wavelet':
+            return [self.s2.wavelet, self.s4.wavelet]
         else:
             return []
 
@@ -235,12 +290,14 @@ def main():
     parser.add_argument('--test-batch-size', type=int, default=1000,
                         metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--epochs', type=int, default=50, metavar='N',
+    parser.add_argument('--epochs', type=int, default=25, metavar='N',
                         help='number of epochs to train (default: 14)')
     parser.add_argument('--lr', type=float, default=.01, metavar='LR',
                         help='learning rate (default: 1.0)')
     parser.add_argument('--gamma', type=float, default=0.99, metavar='M',
                         help='Learning rate step gamma (default: 0.7)')
+    parser.add_argument('--momentum', type=float, default=0.8, metavar='M',
+                       help='LGD momentum')                        
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
@@ -251,7 +308,7 @@ def main():
                         help='For Saving the current Model')
     parser.add_argument('--tensorboard', help='Log progress to TensorBoard',
                         action='store_true', default=False)
-    parser.add_argument('--pooling_type', default='max', type=str,
+    parser.add_argument('--pooling_type', default='wavelet', type=str,
                         help='pooling type to use')
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
@@ -264,8 +321,9 @@ def main():
     if args.tensorboard:
         # configure("runs/%s"%(args.name))
         writer = SummaryWriter(comment='_' + args.pooling_type
-                                       + '_' + str(args.lr)
-                                       + '_' + str(args.gamma))
+                                       + '_lr_' + str(args.lr)
+                                       + '_g_' + str(args.gamma)
+                                       + '_m_' + str(args.momentum))
     else:
         writer = None
 
@@ -284,11 +342,13 @@ def main():
                        ])),
         batch_size=args.test_batch_size, shuffle=True, **kwargs)
 
-    model = Net(pool_type=args.pooling_type).to(device)
+    # model = Net(pool_type=args.pooling_type).to(device)
+    model = LeNet5(pool_type=args.pooling_type).to(device)
     print('init wvl loss:', model.get_wavelet_loss())
     # optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
     # optimizer = optim.RMSprop(model.parameters(), lr=args.lr)
-    optimizer = optim.SGD(model.parameters(), lr=args.lr)
+    optimizer = optim.SGD(model.parameters(), lr=args.lr,
+                          momentum=args.momentum)
 
     if model.pool_type == 'adaptive_wavelet'\
         or model.pool_type == 'scaled_adaptive_wavelet':
