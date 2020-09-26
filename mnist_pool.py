@@ -9,57 +9,7 @@ from torch.optim.lr_scheduler import StepLR
 from torch.utils.tensorboard.writer import SummaryWriter
 from util.wavelet_pool2d import StaticWaveletPool2d, AdaptiveWaveletPool2d
 from util.learnable_wavelets import ProductFilter, SoftOrthogonalWavelet
-# Test set: Average loss: 0.0295, Accuracy: 9905/10000 (99%)
-# Wavelet Test set: Average loss: 0.0335, Accuracy: 9908/10000 (99%)
-# Max pool: Test set: Average loss: 0.0402, Accuracy: 9915/10000 (99%)
-# scaled wavelet: Accuracy: 9855/10000 (99%)
-# avgPool: Test set: Average loss: 0.0332, Accuracy: 9913/10000 (99%)
-
-
-
-def get_pool(pool_type, scales=2):
-    if pool_type == 'scaled_adaptive_wavelet':
-        print('scaled adaptive wavelet')
-        degree = 1
-        size = degree*2
-        wavelet = ProductFilter(
-                    torch.rand(size, requires_grad=True)*2. - 1.,
-                    torch.rand(size, requires_grad=True)*2. - 1.,
-                    torch.rand(size, requires_grad=True)*2. - 1.,
-                    torch.rand(size, requires_grad=True)*2. - 1.)
-        return AdaptiveWaveletPool2d(wavelet=wavelet,
-                                        use_scale_weights=True,
-                                        scales=scales)
-    if pool_type == 'adaptive_wavelet':
-        print('adaptive wavelet')
-        degree = 1
-        size = degree*2
-        wavelet = ProductFilter(
-                    torch.rand(size, requires_grad=True)*2. - 1.,
-                    torch.rand(size, requires_grad=True)*2. - 1.,
-                    torch.rand(size, requires_grad=True)*2. - 1.,
-                    torch.rand(size, requires_grad=True)*2. - 1.)
-        return AdaptiveWaveletPool2d(wavelet=wavelet,
-                                        use_scale_weights=False,
-                                        scales=scales)
-    elif pool_type == 'wavelet':
-        print('static wavelet')
-        return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
-                                    use_scale_weights=False,
-                                    scales=scales)
-    elif pool_type == 'scaled_wavelet':
-        print('scaled static wavelet')
-        return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
-                                    use_scale_weights=True,
-                                    scales=scales)
-    elif pool_type == 'max':
-        print('max pool')
-        return nn.MaxPool2d(2)
-    elif pool_type == 'avg':
-        print('avg pool')
-        return nn.AvgPool2d(2)
-    else:
-        raise NotImplementedError
+from util.pool_select import get_pool
 
 
 class Net(nn.Module):

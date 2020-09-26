@@ -1,3 +1,4 @@
+# Created by moritz (wolter@cs.uni-bonn.de) , 26.09.20
 import argparse
 import os
 import shutil
@@ -13,11 +14,11 @@ from torch.utils.tensorboard.writer import SummaryWriter
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
-
-import util.densenet as dn
+import util.densenet_cifar as dn
+from util.vgg_cifar import VGG
 from util.learnable_wavelets import SoftOrthogonalWavelet
 
-parser = argparse.ArgumentParser(description='PyTorch DenseNet Training')
+parser = argparse.ArgumentParser(description='PyTorch Cifar Training')
 parser.add_argument('--epochs', default=300, type=int,
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int,
@@ -26,7 +27,7 @@ parser.add_argument('-b', '--batch-size', default=64, type=int,
                     help='mini-batch size (default: 64)')
 parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
                     help='initial learning rate')
-parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
+parser.add_argument('--momentum', default=0.6, type=float, help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=0., type=float,
                     help='weight decay (default: 1e-4)')
 parser.add_argument('--print-freq', '-p', default=10, type=int,
@@ -35,8 +36,6 @@ parser.add_argument('--layers', default=100, type=int,
                     help='total number of layers (default: 100)')
 parser.add_argument('--growth', default=12, type=int,
                     help='number of new channels per layer (default: 12)')
-parser.add_argument('--droprate', default=0, type=float,
-                    help='dropout probability (default: 0.0)')
 parser.add_argument('--no-augment', dest='augment', action='store_false',
                     help='whether to use standard augmentation (default: True)')
 parser.add_argument('--reduce', default=0.5, type=float,
@@ -55,12 +54,17 @@ parser.add_argument('--tensorboard',
 parser.add_argument('--cpu',
                     help='Log progress to TensorBoard', action='store_true',
                     default=False)
+parser.add_argument('--seed', type=int, default=1, metavar='S',
+                    help='random seed (default: 1)')
+
 parser.set_defaults(bottleneck=True)
 parser.set_defaults(augment=True)
 
 best_prec1 = 0
 args = parser.parse_args()
 print(args)
+
+
 if args.tensorboard:
     # configure("runs/%s"%(args.name))
     writer = SummaryWriter(comment='_' + args.pooling_type)
@@ -69,6 +73,7 @@ if args.tensorboard:
 def main():
     global args, best_prec1
 
+    torch.manual_seed(args.seed)
     # Data loading code
     normalize = transforms.Normalize(
         mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
@@ -102,9 +107,11 @@ def main():
 
     # create model
     model = dn.DenseNet3(args.layers, 10, args.growth, reduction=args.reduce,
-                         bottleneck=args.bottleneck, dropRate=args.droprate,
+                         bottleneck=args.bottleneck, dropRate=0.,
                          pool_type=args.pooling_type)
-    
+    # model = VGG(pool_type=args.pooling_type)
+    # print(model)
+
     # get the number of model parameters
     print('Number of model parameters: {}'.format(
         sum([p.data.nelement() for p in model.parameters()])))
@@ -134,13 +141,13 @@ def main():
             for wavelet in wavelets:
                 optimizer = torch.optim.SGD(wavelet.parameters(), lr=args.lr)
                 print('init wvl loss', wavelet.wavelet_loss().item())
-                # for i in range(10):
-                #      optimizer.zero_grad()
-                #      wvl_loss = wavelet.wavelet_loss()
-                #      wvl_loss.backward()
-                #      # print(i, wvl_loss.item())
-                #      optimizer.step()
-                # print('final wvl loss', wavelet.wavelet_loss().item())
+                for i in range(250):
+                      optimizer.zero_grad()
+                      wvl_loss = wavelet.wavelet_loss()
+                      wvl_loss.backward()
+                      # print(i, wvl_loss.item())
+                      optimizer.step()
+                print('final wvl loss', wavelet.wavelet_loss().item())
 
     cudnn.benchmark = True
 
@@ -149,18 +156,19 @@ def main():
         criterion = nn.CrossEntropyLoss().cuda()
     else:
         criterion = nn.CrossEntropyLoss()
-    # if args.momentum > 0:
-    #     nesterov = True
-    # else:
-    #     nesterov = False
-    # optimizer = torch.optim.SGD(model.parameters(), args.lr,
-    #                             momentum=args.momentum,
-    #                             nesterov=nesterov,
-    #                             weight_decay=args.weight_decay)
-    optimizer = torch.optim.Adam(model.parameters(),
-                                    args.lr,
-                                    # momentum=args.momentum,
-                                    weight_decay=args.weight_decay)
+    if args.momentum > 0:
+        nesterov = True
+    else:
+        nesterov = False
+    # nesterov = False
+    optimizer = torch.optim.SGD(model.parameters(), args.lr,
+                                momentum=args.momentum,
+                                nesterov=nesterov,
+                                weight_decay=args.weight_decay)
+    # optimizer = torch.optim.Adam(model.parameters(),
+    #                              args.lr,
+    #                              momentum=args.momentum,
+    #                              weight_decay=args.weight_decay)
     print('using :', optimizer)
 
     for epoch in range(args.start_epoch, args.epochs):
