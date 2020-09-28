@@ -160,7 +160,7 @@ def main():
         nesterov = True
     else:
         nesterov = False
-    # nesterov = False
+    nesterov = False
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
                                 nesterov=nesterov,
