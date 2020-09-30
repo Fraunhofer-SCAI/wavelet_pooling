@@ -16,6 +16,7 @@ import torchvision.datasets as datasets
 
 import util.densenet_cifar as dn
 from util.vgg_cifar import VGG
+from util.cifar_alexnet import AlexNet
 from util.learnable_wavelets import SoftOrthogonalWavelet
 
 parser = argparse.ArgumentParser(description='PyTorch Cifar Training')
@@ -106,9 +107,10 @@ def main():
         batch_size=args.batch_size, shuffle=True, **kwargs)
 
     # create model
-    model = dn.DenseNet3(args.layers, 10, args.growth, reduction=args.reduce,
-                         bottleneck=args.bottleneck, dropRate=0.,
-                         pool_type=args.pooling_type)
+    # model = dn.DenseNet3(args.layers, 10, args.growth, reduction=args.reduce,
+    #                     bottleneck=args.bottleneck, dropRate=0.,
+    #                     pool_type=args.pooling_type)
+    model = AlexNet(pool_type=args.pooling_type)
     # model = VGG(pool_type=args.pooling_type)
     # print(model)
 
@@ -156,14 +158,9 @@ def main():
         criterion = nn.CrossEntropyLoss().cuda()
     else:
         criterion = nn.CrossEntropyLoss()
-    if args.momentum > 0:
-        nesterov = True
-    else:
-        nesterov = False
-    nesterov = False
+
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
-                                nesterov=nesterov,
                                 weight_decay=args.weight_decay)
     # optimizer = torch.optim.Adam(model.parameters(),
     #                              args.lr,
