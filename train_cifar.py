@@ -53,7 +53,7 @@ parser.add_argument('--tensorboard',
                     help='Log progress to TensorBoard', action='store_true',
                     default=False)
 parser.add_argument('--cpu',
-                    help='Log progress to TensorBoard', action='store_true',
+                    help='Run on cpu only', action='store_true',
                     default=False)
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')

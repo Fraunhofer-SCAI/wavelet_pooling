@@ -11,15 +11,15 @@ jobs = []
 
 time_str = str(datetime.datetime.today())
 with open("p_" + 'mean' + time_str + ".txt", "w") as f:
-    jobs.append(subprocess.Popen(['python', '../train_cifar.py', '--pooling_type', 'max'], stdout=f))
+    jobs.append(subprocess.Popen(['python', '../train_cifar.py', '--pooling_type', 'max', '--tensorboard'], stdout=f))
 with open("p_" + 'avg' + time_str + ".txt", "w") as f:
-    jobs.append(subprocess.Popen(['python', '../train_cifar.py', '--pooling_type', 'avg'], stdout=f))
+    jobs.append(subprocess.Popen(['python', '../train_cifar.py', '--pooling_type', 'avg', '--tensorboard'], stdout=f))
 with open("p_" + 'wavelet' + time_str + ".txt", "w") as f:
-    jobs.append(subprocess.Popen(['python', '../train_cifar.py', '--pooling_type', 'wavelet'], stdout=f))
+    jobs.append(subprocess.Popen(['python', '../train_cifar.py', '--pooling_type', 'wavelet', '--tensorboard'], stdout=f))
 with open("p_" + 'adaptive_wavelet' + time_str + ".txt", "w") as f:
-    jobs.append(subprocess.Popen(['python', '../train_cifar.py', '--pooling_type', 'adaptive_wavelet'], stdout=f))
+    jobs.append(subprocess.Popen(['python', '../train_cifar.py', '--pooling_type', 'adaptive_wavelet', '--tensorboard'], stdout=f))
 with open("p_" + 'scaled_wavelet' + time_str + ".txt", "w") as f:
-    jobs.append(subprocess.Popen(['python', '../train_cifar.py', '--pooling_type', 'scaled_wavelet'], stdout=f))
+    jobs.append(subprocess.Popen(['python', '../train_cifar.py', '--pooling_type', 'scaled_wavelet', '--tensorboard'], stdout=f))
 
 for job in jobs:
     job.wait()
