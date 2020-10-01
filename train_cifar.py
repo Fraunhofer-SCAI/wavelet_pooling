@@ -68,7 +68,9 @@ print(args)
 
 if args.tensorboard:
     # configure("runs/%s"%(args.name))
-    writer = SummaryWriter(comment='_' + args.pooling_type)
+    writer = SummaryWriter(comment='_' + args.pooling_type
+                                    + '_lr_' + str(args.lr)
+                                    + '_m_' + str(args.momentum))
 
 
 def main():
