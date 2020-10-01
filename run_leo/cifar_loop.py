@@ -15,31 +15,31 @@ time_str = str(datetime.datetime.today())
 with open("p_" + 'mean' + time_str + ".txt", "w") as f:
     jobs.append(subprocess.Popen(['python', '../train_cifar.py', 
                                   '--pooling_type', 'max',
-                                  '--lr', lr,
-                                  '--momentum', momentum,
+                                  '--lr', str(lr),
+                                  '--momentum', str(momentum),
                                   '--tensorboard'], stdout=f))
 with open("p_" + 'avg' + time_str + ".txt", "w") as f:
     jobs.append(subprocess.Popen(['python', '../train_cifar.py',
                                   '--pooling_type', 'avg',
-                                  '--lr', lr,
-                                  '--momentum', momentum,
+                                  '--lr', str(lr),
+                                  '--momentum', str(momentum),
                                   '--tensorboard'], stdout=f))
 with open("p_" + 'wavelet' + time_str + ".txt", "w") as f:
     jobs.append(subprocess.Popen(['python', '../train_cifar.py',
                                   '--pooling_type', 'wavelet',
-                                  '--lr', lr,
-                                  '--momentum', momentum,
+                                  '--lr', str(lr),
+                                  '--momentum', str(momentum),
                                   '--tensorboard'], stdout=f))
 with open("p_" + 'adaptive_wavelet' + time_str + ".txt", "w") as f:
     jobs.append(subprocess.Popen(['python', '../train_cifar.py',
-                                  '--lr', lr,
-                                  '--momentum', momentum,
+                                  '--lr', str(lr),
+                                  '--momentum', str(momentum),
                                   '--pooling_type', 'adaptive_wavelet',
                                   '--tensorboard'], stdout=f))
 with open("p_" + 'scaled_wavelet' + time_str + ".txt", "w") as f:
     jobs.append(subprocess.Popen(['python', '../train_cifar.py',
-                                  '--lr', lr,
-                                  '--momentum', momentum,
+                                  '--lr', str(lr),
+                                  '--momentum', str(momentum),
                                   '--pooling_type', 'scaled_wavelet',
                                   '--tensorboard'], stdout=f))
 
