@@ -9,7 +9,7 @@ print('running cifar pooling sweep in parallel')
 
 jobs = []
 lr = 0.1
-momentum = 0.0
+momentum = 0.2
 
 time_str = str(datetime.datetime.today())
 with open("p_" + 'mean' + time_str + ".txt", "w") as f:
