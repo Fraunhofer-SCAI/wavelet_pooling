@@ -8,8 +8,8 @@ subprocess.call('pwd')
 print('running cifar pooling sweep in parallel')
 
 jobs = []
-lr = [0.05]
-momentum = [0.0, 0.3, 0.6]
+lr_lst = [0.05]
+momentum_lst = [0.0, 0.3, 0.6]
 
 for lr in lr_lst:
     for momentum in momentum_lst:
