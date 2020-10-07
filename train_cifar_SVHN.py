@@ -19,12 +19,12 @@ from util.vgg_cifar import VGG
 from util.cifar_alexnet import AlexNet
 from util.learnable_wavelets import SoftOrthogonalWavelet
 
-parser = argparse.ArgumentParser(description='PyTorch Cifar Training')
+parser = argparse.ArgumentParser(description='PyTorch Cifar/SVHN Training')
 parser.add_argument('--epochs', default=300, type=int,
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int,
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=64, type=int,
+parser.add_argument('-b', '--batch-size', default=128, type=int,
                     help='mini-batch size (default: 64)')
 parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
                     help='initial learning rate')
@@ -45,18 +45,19 @@ parser.add_argument('--no-bottleneck', dest='bottleneck', action='store_false',
                     help='To not use bottleneck block')
 parser.add_argument('--resume', default='', type=str,
                     help='path to latest checkpoint (default: none)')
-parser.add_argument('--name', default='DenseNet_BC_100_12', type=str,
+parser.add_argument('--name', default='exp1', type=str,
                     help='name of experiment')
 parser.add_argument('--pooling_type', default='scaled_wavelet', type=str,
                     help='pooling type to use')
 parser.add_argument('--tensorboard',
                     help='Log progress to TensorBoard', action='store_true',
                     default=False)
-parser.add_argument('--cpu',
-                    help='Run on cpu only', action='store_true',
+parser.add_argument('--cpu', help='Run on cpu only', action='store_true',
                     default=False)
 parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
+parser.add_argument('--data_set', default='cifar10', type=str,
+                    help='The data set to be used.')
 
 parser.set_defaults(bottleneck=True)
 parser.set_defaults(augment=True)
@@ -68,9 +69,10 @@ print(args)
 
 if args.tensorboard:
     # configure("runs/%s"%(args.name))
-    writer = SummaryWriter(comment='_' + args.pooling_type
-                                    + '_lr_' + str(args.lr)
-                                    + '_m_' + str(args.momentum))
+    writer = SummaryWriter(comment='_' + args.data_set + '_'
+                                   + args.pooling_type
+                                   + '_lr_' + str(args.lr)
+                                   + '_m_' + str(args.momentum))
 
 
 def main():
@@ -78,9 +80,20 @@ def main():
 
     torch.manual_seed(args.seed)
     # Data loading code
-    normalize = transforms.Normalize(
-        mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
-        std=[x/255.0 for x in [63.0, 62.1, 66.7]])
+    # to_tensor transform includes division by 255.
+    # see https://pytorch.org/docs/stable/torchvision/
+    # transforms.html#torchvision.transforms.ToTensor
+    if args.data_set == 'cifar10':
+        
+        normalize = transforms.Normalize(
+            mean=[x/255.0 for x in [125.3, 123.0, 113.9]],
+            std=[x/255.0 for x in [63.0, 62.1, 66.7]])
+    elif args.data_set == 'SVHN':
+        normalize = transforms.Normalize(
+            mean=[x/255.0 for x in [111.6, 113.2, 120.6]],
+            std=[x/255.0 for x in [50.5, 51.3, 50.2]])
+    else:
+        raise ValueError('Unkown data set.')
 
     if args.augment:
         transform_train = transforms.Compose([
@@ -100,13 +113,23 @@ def main():
         ])
 
     kwargs = {'num_workers': 1, 'pin_memory': True}
-    train_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10('../data', train=True, download=True,
+    if args.data_set == 'cifar10':
+        train_loader = torch.utils.data.DataLoader(
+            datasets.CIFAR10('../data', train=True, download=True,
+                            transform=transform_train),
+            batch_size=args.batch_size, shuffle=True, **kwargs)
+        val_loader = torch.utils.data.DataLoader(
+            datasets.CIFAR10('../data', train=False, transform=transform_test),
+            batch_size=args.batch_size, shuffle=True, **kwargs)
+    elif args.data_set == 'SVHN':
+        train_loader = torch.utils.data.DataLoader(
+           datasets.SVHN('../data', split='train', download=True,
                          transform=transform_train),
-        batch_size=args.batch_size, shuffle=True, **kwargs)
-    val_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10('../data', train=False, transform=transform_test),
-        batch_size=args.batch_size, shuffle=True, **kwargs)
+                         batch_size=args.batch_size, shuffle=True, **kwargs)
+        val_loader = torch.utils.data.DataLoader(
+            datasets.SVHN('../data', split='test', download=True,
+                         transform=transform_test),
+                         batch_size=args.batch_size, shuffle=True, **kwargs)
 
     # create model
     # model = dn.DenseNet3(args.layers, 10, args.growth, reduction=args.reduce,
