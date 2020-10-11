@@ -58,6 +58,9 @@ parser.add_argument('--seed', type=int, default=1, metavar='S',
                     help='random seed (default: 1)')
 parser.add_argument('--data_set', default='cifar10', type=str,
                     help='The data set to be used.')
+parser.add_argument('--model', default='AlexNet', type=str,
+                    help='The model to be optimized.')
+
 
 parser.set_defaults(bottleneck=True)
 parser.set_defaults(augment=True)
@@ -132,11 +135,16 @@ def main():
                          batch_size=args.batch_size, shuffle=True, **kwargs)
 
     # create model
-    # model = dn.DenseNet3(args.layers, 10, args.growth, reduction=args.reduce,
-    #                     bottleneck=args.bottleneck, dropRate=0.,
-    #                     pool_type=args.pooling_type)
-    model = AlexNet(pool_type=args.pooling_type)
-    # model = VGG(pool_type=args.pooling_type)
+    if args.model == 'DenseNet':
+        model = dn.DenseNet3(args.layers, 10, args.growth, reduction=args.reduce,
+                             bottleneck=args.bottleneck, dropRate=0.,
+                             pool_type=args.pooling_type)
+    elif args.model == 'AlexNet':
+        model = AlexNet(pool_type=args.pooling_type)
+    elif args.model == 'VGG':
+        model = VGG(pool_type=args.pooling_type)
+    else:
+        raise ValueError('Unkown model.')
     # print(model)
 
     # get the number of model parameters
