@@ -60,6 +60,9 @@ parser.add_argument('--data_set', default='cifar10', type=str,
                     help='The data set to be used.')
 parser.add_argument('--model', default='AlexNet', type=str,
                     help='The model to be optimized.')
+parser.add_argument('--nesterov',
+                    help='Use nesterov SGD', action='store_true',
+                    default=False)                    
 
 
 parser.set_defaults(bottleneck=True)
@@ -194,7 +197,8 @@ def main():
 
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
-                                weight_decay=args.weight_decay)
+                                weight_decay=args.weight_decay,
+                                nesterov=args.nesterov)
     # optimizer = torch.optim.Adam(model.parameters(),
     #                              args.lr,
     #                              momentum=args.momentum,
