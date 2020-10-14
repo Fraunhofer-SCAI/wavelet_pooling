@@ -127,14 +127,14 @@ if __name__ == '__main__':
     if wavelet_scales:
         print('wavlet cost plot')
         scaled_wavelet = 'Sep28_19-28-20_geigelstein_scaled_wavelet_lr_0.12_g_0.95_m_0.6'
-        log = return_logs(base_path+scaled_wavelet, vtag='train_wavelets_scales/weights/pl_1_no_0', window_size=100)
+        log = return_logs(base_path+scaled_wavelet, vtag='train_wavelets_scales/weights/pl_1_no_0', window_size=0)
         plt.plot(log[0][0][0], log[0][0][1], label='1')
-        log = return_logs(base_path+scaled_wavelet, vtag='train_wavelets_scales/weights/pl_1_no_1', window_size=100)
+        log = return_logs(base_path+scaled_wavelet, vtag='train_wavelets_scales/weights/pl_1_no_1', window_size=0)
         plt.plot(log[0][0][0], log[0][0][1], label='2')
 
-        log = return_logs(base_path+scaled_wavelet, vtag='train_wavelets_scales/weights/pl_1_no_2', window_size=100)
+        log = return_logs(base_path+scaled_wavelet, vtag='train_wavelets_scales/weights/pl_1_no_2', window_size=0)
         plt.plot(log[0][0][0], log[0][0][1], label='3')
-        log = return_logs(base_path+scaled_wavelet, vtag='train_wavelets_scales/weights/pl_1_no_3', window_size=100)
+        log = return_logs(base_path+scaled_wavelet, vtag='train_wavelets_scales/weights/pl_1_no_3', window_size=0)
         plt.plot(log[0][0][0], log[0][0][1], label='4')
 
         plt.title('LeNet second pooling layer scales')
@@ -149,13 +149,13 @@ if __name__ == '__main__':
     if wavelet_cost:
         print('wavlet cost plot')
         adaptive_wavelet = 'Sep26_00-39-11_geigelstein_adaptive_wavelet_lr_0.12_g_0.95_m_0.6'
-        log = return_logs(base_path+adaptive_wavelet, vtag='train_wavelets_prod/ac_conv_loss/pl_1', window_size=100)
+        log = return_logs(base_path+adaptive_wavelet, vtag='train_wavelets_prod/ac_conv_loss/pl_1', window_size=0)
         plt.semilogy(log[0][0][0], log[0][0][1], label='conv alias cancellation loss')
         # plt.show()
         # tikzplotlib.save('window_sigma_plot.tex', standalone=True)
-        log = return_logs(base_path+adaptive_wavelet, vtag='train_wavelets_prod/ac_prod_filt_loss/pl_1', window_size=100)
+        log = return_logs(base_path+adaptive_wavelet, vtag='train_wavelets_prod/ac_prod_filt_loss/pl_1', window_size=0)
         plt.semilogy(log[0][0][0], log[0][0][1], label='mse alias cancellation loss')
-        log = return_logs(base_path+adaptive_wavelet, vtag='train_wavelets_prod/pr_loss/pl_1', window_size=100)
+        log = return_logs(base_path+adaptive_wavelet, vtag='train_wavelets_prod/pr_loss/pl_1', window_size=0)
         plt.semilogy(log[0][0][0], log[0][0][1], label='perfect reconstruction loss')
 
         plt.title('LeNet second pooling layer cost')
