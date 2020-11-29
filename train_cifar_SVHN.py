@@ -62,8 +62,7 @@ parser.add_argument('--model', default='AlexNet', type=str,
                     help='The model to be optimized.')
 parser.add_argument('--nesterov',
                     help='Use nesterov SGD', action='store_true',
-                    default=False)                    
-
+                    default=False)
 
 parser.set_defaults(bottleneck=True)
 parser.set_defaults(augment=True)

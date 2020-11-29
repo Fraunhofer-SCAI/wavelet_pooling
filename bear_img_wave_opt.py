@@ -8,8 +8,8 @@ from scipy import misc
 import matplotlib.pyplot as plt
 import tikzplotlib
 
-scales=5
-iterations = 1500
+scales = 5
+iterations = 500
 face = misc.face()  # [128:(512+128), 256:(512+256)]
 face = face / 255.
 face = torch.tensor(face.astype(np.float32))
@@ -17,7 +17,7 @@ face = face.unsqueeze(0)
 face = face.permute([3, 0, 1, 2])
 
 
-def set_scale(wavelet_coeffs, zero_scale=5, weights:list=None):
+def set_scale(wavelet_coeffs, zero_scale=5, weights: list = None):
     '''
     Simply zero out entire scales.
     :param wavelet_coeffs: The list re
@@ -54,10 +54,12 @@ wavelet = ProductFilter(
             torch.tensor([0, 0, 0.7071067811865476, -0.7071067811865476, 0, 0],
                          requires_grad=True))
 
-scale_weights = torch.ones(size=[scales], requires_grad=True) # + torch.rand([scales])
+
+scale_weights = torch.ones(size=[scales], requires_grad=True)  # + torch.rand([scales])
 
 # opt = torch.optim.Adagrad(list(wavelet.parameters()) + [scale_weights], lr=0.001)
-opt = torch.optim.Adam(list(wavelet.parameters()) + [scale_weights], lr=1e-03)
+opt = torch.optim.Adam(list(wavelet.parameters()) + [scale_weights], lr=5e-04)
+# opt = torch.optim.Adadelta(list(wavelet.parameters()) + [scale_weights], lr=0.01)
 coeffs = conv_fwt_2d(face, wavelet, scales=scales)
 z_coeffs = set_scale(coeffs, zero_scale=scales-1, weights=scale_weights)
 init_rec = conv_ifwt_2d(z_coeffs, wavelet)
@@ -66,6 +68,15 @@ down_face = init_rec/torch.max(torch.abs(init_rec))
 # plt.show()
 
 mse_list = []
+
+print('init wvl loss', wavelet.wavelet_loss().item())
+for i in range(5000):
+    opt.zero_grad()
+    wvl_loss = wavelet.wavelet_loss()
+    wvl_loss.backward()
+    # print(i, wvl_loss.item())
+    opt.step()
+print('final wvl loss', wavelet.wavelet_loss().item())
 
 for i in range(iterations):
     opt.zero_grad()

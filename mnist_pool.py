@@ -247,7 +247,7 @@ def main():
     parser.add_argument('--gamma', type=float, default=0.99, metavar='M',
                         help='Learning rate step gamma (default: 0.7)')
     parser.add_argument('--momentum', type=float, default=0.8, metavar='M',
-                       help='LGD momentum')                        
+                        help='LGD momentum')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
