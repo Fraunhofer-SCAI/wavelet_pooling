@@ -47,12 +47,12 @@ class Net(nn.Module):
         x = self.flatten(x)
         x = self.lin(x)
         # x = self.norm4(x)
-        output = F.log_softmax(x, dim=1)
+        output = F.log_softp(x, dim=1)
         return output
 
     def get_wavelet_loss(self):
         if self.pool_type == 'adaptive_wavelet'\
-            or self.pool_type == 'scaled_adaptive_wavelet':
+                or self.pool_type == 'scaled_adaptive_wavelet':
             return self.pool1.wavelet.wavelet_loss() + \
                    self.pool2.wavelet.wavelet_loss()
         else:
@@ -88,7 +88,7 @@ class LeNet5(nn.Module):
         self.s4 = get_pool(pool_type, scales=2)
         self.fc1 = nn.Linear(16*5*5, 120)
         self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84,10)
+        self.fc3 = nn.Linear(84, 10)
 
     def forward(self, x):
         x = self.c1(x)
@@ -106,7 +106,7 @@ class LeNet5(nn.Module):
 
     def get_wavelet_loss(self):
         if self.pool_type == 'adaptive_wavelet'\
-            or self.pool_type == 'scaled_adaptive_wavelet':
+                or self.pool_type == 'scaled_adaptive_wavelet':
             return self.s2.wavelet.wavelet_loss() + \
                    self.s4.wavelet.wavelet_loss()
         else:
@@ -136,9 +136,9 @@ def train(args, writer, model, device, train_loader, optimizer, epoch):
         output = model(data)
         loss = F.nll_loss(output, target)
         if model.pool_type == 'adaptive_wavelet'\
-            or model.pool_type == 'scaled_adaptive_wavelet':
-                wvl = model.get_wavelet_loss()
-                loss += wvl
+                or model.pool_type == 'scaled_adaptive_wavelet':
+            wvl = model.get_wavelet_loss()
+            loss += wvl
         else:
             wvl = 0.
 
@@ -154,14 +154,14 @@ def train(args, writer, model, device, train_loader, optimizer, epoch):
                   \t lr: {:.6f} \t wvl: {:.6f}'.format(
                 epoch, batch_idx * len(data), len(train_loader.dataset),
                 100. * batch_idx / len(train_loader), loss.item(), lr, wvl))
-    
+
         # log to TensorBoard
         if args.tensorboard:
             #log_value('train_loss', losses.avg, epoch)
             writer.add_scalar('train_loss', loss, batch_idx * len(data) + epoch*len(train_loader.dataset))
             # log_value('train_acc', top1.avg, epoch)
             writer.add_scalar('wvl', wvl, batch_idx * len(data) + epoch*len(train_loader.dataset))
-    
+
             if args.pooling_type == 'adaptive_wavelet' \
                 or args.pooling_type == 'scaled_adaptive_wavelet':
                 pool_layers = model.get_pool()
@@ -190,7 +190,7 @@ def train(args, writer, model, device, train_loader, optimizer, epoch):
                             tag='train_wavelets_orth/harbo/pl_' + str(pool_no),
                             scalar_value=pool.wavelet.filt_bank_orthogonality_loss(),
                             global_step=batch_idx * len(data) + epoch*len(train_loader.dataset))
-    
+
             if args.pooling_type == 'adaptive_wavelet' \
                 or args.pooling_type == 'scaled_wavelet' \
                 or args.pooling_type == 'scaled_adaptive_wavelet':
@@ -225,11 +225,12 @@ def test(args, writer, epoch, model, device, test_loader):
         100. * correct / len(test_loader.dataset)))
 
     if args.tensorboard:
-        #log_value('train_loss', losses.avg, epoch)
+        # log_value('train_loss', losses.avg, epoch)
         writer.add_scalar('test_loss', test_loss, epoch)
         # log_value('train_acc', top1.avg, epoch)
         writer.add_scalar('test_correct', correct, epoch)
-        writer.add_scalar('test_accuracy', 100. * correct / len(test_loader.dataset) , epoch)
+        writer.add_scalar('test_accuracy',
+                          100. * correct / len(test_loader.dataset), epoch)
 
 
 def main():
@@ -258,7 +259,7 @@ def main():
                         help='For Saving the current Model')
     parser.add_argument('--tensorboard', help='Log progress to TensorBoard',
                         action='store_true', default=False)
-    parser.add_argument('--pooling_type', default='wavelet', type=str,
+    parser.add_argument('--pooling_type', default='seperable_wavelet', type=str,
                         help='pooling type to use')
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
@@ -318,13 +319,12 @@ def main():
         if args.tensorboard:
             for param_group in optimizer.param_groups:
                 writer.add_scalar('lr', param_group['lr'], epoch)
-        
-        train(args, writer, model, device, train_loader, optimizer, epoch=epoch)
+
+        train(args, writer, model, device, train_loader, optimizer,
+              epoch=epoch)
         print('wvl loss:', model.get_wavelet_loss())
         test(args, writer, epoch, model, device, test_loader)
         scheduler.step()
-
-
 
     if args.save_model:
         torch.save(model.state_dict(), "mnist_cnn.pt")

@@ -17,8 +17,8 @@ def get_pool(pool_type, scales=2):
                     torch.rand(size, requires_grad=True)*2. - 1.,
                     torch.rand(size, requires_grad=True)*2. - 1.,)
         return AdaptiveWaveletPool2d(wavelet=wavelet,
-                                        use_scale_weights=True,
-                                        scales=scales)
+                                     use_scale_weights=True,
+                                     scales=scales)
     if pool_type == 'adaptive_wavelet':
         print('adaptive wavelet')
         degree = 1
@@ -29,18 +29,24 @@ def get_pool(pool_type, scales=2):
                     torch.rand(size, requires_grad=True)*2. - 1.,
                     torch.rand(size, requires_grad=True)*2. - 1.)
         return AdaptiveWaveletPool2d(wavelet=wavelet,
-                                        use_scale_weights=False,
-                                        scales=scales)
+                                     use_scale_weights=False,
+                                     scales=scales)
     elif pool_type == 'wavelet':
         print('static wavelet')
         return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
-                                    use_scale_weights=False,
-                                    scales=scales)
+                                   use_scale_weights=False,
+                                   scales=scales)
+    elif pool_type == 'seperable_wavelet':
+        print('static seperable wavelet')
+        return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
+                                   use_scale_weights=False,
+                                   scales=scales,
+                                   seperable=True)
     elif pool_type == 'scaled_wavelet':
         print('scaled static wavelet')
         return StaticWaveletPool2d(wavelet=pywt.Wavelet('haar'),
-                                    use_scale_weights=True,
-                                    scales=scales)
+                                   use_scale_weights=True,
+                                   scales=scales)
     elif pool_type == 'max':
         print('max pool')
         return nn.MaxPool2d(2)

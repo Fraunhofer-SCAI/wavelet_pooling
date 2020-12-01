@@ -75,7 +75,7 @@ def fwt_pad(data, wavelet):
 
     # print('fwt pad', data.shape, pad)
     data_pad = torch.nn.functional.pad(data, [padl, padr],
-                                       mode='reflect') # mode='constant') #mode='reflect')
+                                       mode='reflect')
     return data_pad
 
 
@@ -83,7 +83,7 @@ def fwt_pad2d(data, wavelet):
     padb, padt = get_pad(data.shape[-2], len(wavelet.dec_lo))
     padr, padl = get_pad(data.shape[-1], len(wavelet.dec_lo))
     data_pad = torch.nn.functional.pad(data, [padt, padb, padl, padr],
-                                       mode='reflect') # mode='constant') #mode='reflect')
+                                       mode='reflect')
     return data_pad
 
 
@@ -140,7 +140,7 @@ def conv_fwt_2d(data, wavelet, scales: int = None) -> list:
     # dec_hi = torch.tensor(dec_hi[::-1]).unsqueeze(0)
     dec_lo, dec_hi, _, _ = get_filter_tensors(wavelet, flip=True,
                                               device=data.device)
-    filt_len = dec_lo.shape[-1]
+    # filt_len = dec_lo.shape[-1]
     dec_filt = construct_2d_filt(lo=dec_lo, hi=dec_hi)
 
     if scales is None:

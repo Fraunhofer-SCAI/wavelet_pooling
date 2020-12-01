@@ -1,6 +1,5 @@
 
 import datetime
-
 import subprocess
 subprocess.call('pwd')
 

@@ -31,7 +31,7 @@ class WaveletFilter(ABC):
     #     raise NotImplementedError
 
     def pf_alias_cancellation_loss(self) -> [torch.Tensor, torch.Tensor,
-                                              torch.Tensor]:
+                                             torch.Tensor]:
         """ Strang+Nguyen 105: F0(z) = H1(-z); F1(z) = -H0(-z)
         Alternating sign convention from 0 to N see Strang overview
         on the back of the cover.
@@ -266,14 +266,13 @@ class PowerWavelet(WaveletFilter, torch.nn.Module):
                          torch.pow(two, -self.alpha)]), \
             torch.stack([torch.pow(two, -self.alpha),
                          -torch.pow(two, -self.alpha)])
-                
+
     def __len__(self):
         return 2
 
     def product_filter_loss(self):
         return self.perfect_reconstruction_loss()[0] \
                + self.alias_cancellation_loss()[0]
-
 
     def wavelet_loss(self):
         return self.product_filter_loss()
@@ -291,7 +290,7 @@ if __name__ == '__main__':
                                       torch.tensor(pywt_wave.rec_lo),
                                       torch.tensor(pywt_wave.rec_hi))
     orth_wave.wavelet_loss()
-    print('orth-harbo', 
+    print('orth-harbo',
           orth_wave.filt_bank_orthogonality_loss().detach().numpy())
     print('orth-strang', orth_wave.rec_lo_orthogonality_loss().detach().numpy())
     # print('rec_lo', pywt_wave.rec_lo, orth_wave.rec_lo)

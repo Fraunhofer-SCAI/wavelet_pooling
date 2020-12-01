@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 # from abc import ABC
 from util.conv_transform import conv_fwt_2d, conv_ifwt_2d
+from util.sep_conv_transform import sep_conv_fwt_2d, inv_sep_conv_fwt_2d
 
 
 class WaveletPool2d(nn.Module):
@@ -24,22 +25,17 @@ class WaveletPool2d(nn.Module):
 
         # pad to even signal length
         if fold_channels.shape[-1] % 2 != 0:
-                padl += 1
+            padl += 1
         if fold_channels.shape[-2] % 2 != 0:
-                padt += 1
+            padt += 1
 
         fold_channels = torch.nn.functional.pad(fold_channels,
                                                 [padt, padb, padl, padr])
 
-        coeffs = conv_fwt_2d(fold_channels,
-                             wavelet=self.wavelet,
-                             scales=self.scales)
+        coeffs = self.conv_2d(fold_channels,
+                              wavelet=self.wavelet,
+                              scales=self.scales)
 
-        safety_test = conv_ifwt_2d(coeffs, wavelet=self.wavelet)
-        # rec = conv_ifwt_2d(coeffs, wavelet=self.wavelet)
-        # rec = rec.reshape(img.shape)
-        # err = torch.mean(torch.abs(img - rec))
-        # print(err)
         pool_coeffs = []
         if self.use_scale_weights:
             weight_pos = 0
@@ -58,7 +54,7 @@ class WaveletPool2d(nn.Module):
         else:
             pool_coeffs = coeffs[:-1]
 
-        pool = conv_ifwt_2d(pool_coeffs, wavelet=self.wavelet)
+        pool = self.conv_2d_inverse(pool_coeffs, wavelet=self.wavelet)
         pool = pool.reshape([img.shape[0], img.shape[1],
                              pool.shape[-2], pool.shape[-1]])
         
@@ -87,11 +83,18 @@ class WaveletPool2d(nn.Module):
 
 
 class StaticWaveletPool2d(WaveletPool2d):
-    def __init__(self, wavelet, use_scale_weights=False, scales=3):
+    def __init__(self, wavelet, use_scale_weights=False, scales=3,
+                 seperable=False):
         super().__init__()
         self.wavelet = wavelet
         self.use_scale_weights = use_scale_weights
         self.scales = scales
+        if seperable:
+            self.conv_2d = sep_conv_fwt_2d
+            self.conv_2d_inverse = inv_sep_conv_fwt_2d
+        else:
+            self.conv_2d = conv_fwt_2d
+            self.conv_2d_inverse = conv_ifwt_2d
 
         if self.use_scale_weights:
             weight_no = (self.scales - 1)*3 + 1
@@ -104,6 +107,8 @@ class AdaptiveWaveletPool2d(WaveletPool2d):
         self.wavelet = wavelet
         self.use_scale_weights = use_scale_weights
         self.scales = scales
+        self.conv_2d = conv_fwt_2d
+        self.conv_2d_inverse = conv_ifwt_2d
         assert self.wavelet.rec_lo.requires_grad is True, \
             'adaptive pooling requires grads.'
         assert self.wavelet.rec_hi.requires_grad is True
