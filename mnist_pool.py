@@ -242,12 +242,12 @@ def main():
                         metavar='N',
                         help='input batch size for testing (default: 1000)')
     parser.add_argument('--epochs', type=int, default=25, metavar='N',
-                        help='number of epochs to train (default: 14)')
-    parser.add_argument('--lr', type=float, default=.01, metavar='LR',
-                        help='learning rate (default: 1.0)')
-    parser.add_argument('--gamma', type=float, default=0.99, metavar='M',
-                        help='Learning rate step gamma (default: 0.7)')
-    parser.add_argument('--momentum', type=float, default=0.8, metavar='M',
+                        help='number of epochs to train (default: 25)')
+    parser.add_argument('--lr', type=float, default=.12, metavar='LR',
+                        help='learning rate (default: 0.12)')
+    parser.add_argument('--gamma', type=float, default=0.95, metavar='M',
+                        help='Learning rate step gamma (default: 0.95)')
+    parser.add_argument('--momentum', type=float, default=0.6, metavar='M',
                         help='LGD momentum')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
@@ -259,7 +259,7 @@ def main():
                         help='For Saving the current Model')
     parser.add_argument('--tensorboard', help='Log progress to TensorBoard',
                         action='store_true', default=False)
-    parser.add_argument('--pooling_type', default='seperable_wavelet', type=str,
+    parser.add_argument('--pooling_type', default='adaptive_wavelet', type=str,
                         help='pooling type to use')
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
