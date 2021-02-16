@@ -26,11 +26,11 @@ parser.add_argument('--start-epoch', default=0, type=int,
                     help='manual epoch number (useful on restarts)')
 parser.add_argument('-b', '--batch-size', default=128, type=int,
                     help='mini-batch size (default: 64)')
-parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
+parser.add_argument('--lr', '--learning-rate', default=0.06, type=float,
                     help='initial learning rate')
 parser.add_argument('--momentum', default=0.6, type=float, help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=0., type=float,
-                    help='weight decay (default: 1e-4)')
+                    help='weight decay (default: 0.0)')
 parser.add_argument('--print-freq', '-p', default=10, type=int,
                     help='print frequency (default: 10)')
 parser.add_argument('--layers', default=100, type=int,
