@@ -1,4 +1,4 @@
-# Adaptive wavelet pooling for convolutional neural networks
+# Adaptive wavelet pooling for CNN
 
 This repository implements and evaluates adaptive wavelet pooling.
 Download it on Ubuntu by typing:
