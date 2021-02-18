@@ -19,3 +19,6 @@ To reproduce the results from table 1 run
 ``` bash
 $ ipython experiments/
 ```
+
+
+TODO: Finish until the AISTATS camera ready deadline.

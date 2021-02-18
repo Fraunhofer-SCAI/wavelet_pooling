@@ -18,4 +18,3 @@ for exp in range(10):
                             '--momentum', '0.6',
                             '--gamma', '0.95', '--epochs', '25'])
     job.wait()
-
