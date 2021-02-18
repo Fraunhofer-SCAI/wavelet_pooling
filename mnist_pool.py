@@ -81,11 +81,11 @@ class LeNet5(nn.Module):
         self.c1 = nn.Conv2d(in_channels=1, out_channels=6,
                             kernel_size=5, padding=2, stride=1)
         self.act1 = nn.ReLU()
-        self.s2 = get_pool(pool_type, scales=2)
+        self.s2 = get_pool(pool_type, scales=2, out_shape=(14, 14))
         self.c3 = nn.Conv2d(in_channels=6, out_channels=16,
                             kernel_size=5, padding=0, stride=1)
         self.act3 = nn.ReLU()
-        self.s4 = get_pool(pool_type, scales=2)
+        self.s4 = get_pool(pool_type, scales=2, out_shape=(5, 5))
         self.fc1 = nn.Linear(16*5*5, 120)
         self.fc2 = nn.Linear(120, 84)
         self.fc3 = nn.Linear(84, 10)
@@ -259,8 +259,10 @@ def main():
                         help='For Saving the current Model')
     parser.add_argument('--tensorboard', help='Log progress to TensorBoard',
                         action='store_true', default=False)
-    parser.add_argument('--pooling_type', default='seperable_wavelet', type=str,
-                        help='pooling type to use')
+    parser.add_argument('--pooling_type', default='adaptive_wavelet', type=str,
+                        help='pooling type to use. Options: scaled_adaptive_wavelet,\
+                        adaptive_wavelet, wavelet, seperable_wavelet,\
+                        scaled_wavelet, max, avg, adaptive_max, adaptive_abg .')
     args = parser.parse_args()
     use_cuda = not args.no_cuda and torch.cuda.is_available()
 

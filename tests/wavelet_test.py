@@ -7,9 +7,9 @@ def run_list(lst, orth=True):
     for ws in lst:
         wavelet = pywt.Wavelet(ws)
         orthwave = SoftOrthogonalWavelet(torch.tensor(wavelet.dec_lo),
-                                     torch.tensor(wavelet.dec_hi),
-                                     torch.tensor(wavelet.rec_lo),
-                                     torch.tensor(wavelet.rec_hi))
+                                         torch.tensor(wavelet.dec_hi),
+                                         torch.tensor(wavelet.rec_lo),
+                                         torch.tensor(wavelet.rec_hi))
         prl = orthwave.perfect_reconstruction_loss()[0]
         acl = orthwave.alias_cancellation_loss()[0]
         assert prl < 1e-10
@@ -29,6 +29,7 @@ def test_db_wavelet_loss():
     lst = pywt.wavelist(family='db')
     run_list(lst, orth=True)
 
+
 def test_sym_wavelet_loss():
     lst = pywt.wavelist(family='sym')
     run_list(lst, orth=True)
@@ -38,6 +39,7 @@ def test_coif_wavelet_loss():
     lst = pywt.wavelist(family='coif')
     run_list(lst, orth=True)
 
+
 def test_bior_wavelet_loss():
     lst = pywt.wavelist(family='bior')
     run_list(lst, orth=False)
@@ -46,13 +48,6 @@ def test_bior_wavelet_loss():
 def test_rbio_wavelet_loss():
     lst = pywt.wavelist(family='rbio')
     run_list(lst, orth=False)
-
-
-# def test_dmey_wavelet_loss():
-#     lst = pywt.wavelist(family='dmey')
-#     run_list(lst, orth=True)
-
-
 
 
 if __name__ == '__main__':
