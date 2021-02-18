@@ -14,11 +14,11 @@ To manually verify the wavelet loss values for various standard wavelets type
 ``` bash
 $ ipython tests/wavelet_test.py
 ```
-This code allows reproduction of the resits in the corresponding paper.
-To reproduce the results from table 1 run
+This code allows repetition of the experiments in the paper.
+Assuming you want to work with GPU 0, to repeat the experiments from table 1 run
 ``` bash
-$ ipython experiments/
+$ cd experiments
+$ CUDA_VISIBLE_DEVICES=0 python experiments/run_mnist.py
 ```
-
 
 TODO: Finish until the AISTATS camera ready deadline.
