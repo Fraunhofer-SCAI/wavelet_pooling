@@ -6,7 +6,7 @@ Download it on Ubuntu by typing:
 $ git clone git@github.com:Fraunhofer-SCAI/wavelet_pooling.git
 ```
 This repository ships code to compute the fast wavelet transformation
-in PyTorch. To test the code run
+in PyTorch. To test this part of the the code run
 ``` bash
 $ pytest
 ```
