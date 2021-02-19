@@ -18,47 +18,6 @@ def tensoboard_average(y, window):
     return np.array(window_vals)
 
 
-def plot_logs(ps, legend, title, window_size=25, vtag='mse', ylim=[0.00, 0.35],
-              tikz=False, pdf=False, filename='tfplots.tex', log=False):
-    # cs = ['b', 'r', 'g']
-    for no, p in enumerate(ps):
-        adding_umc = []
-        try:
-            for e in tf.compat.v1.train.summary_iterator(p):
-                for v in e.summary.value:
-                    if v.tag == vtag:
-                        # print(v.simple_value)
-                        adding_umc.append(v.simple_value)
-        except:
-            # ingnore that silly data loss error....
-            pass
-        # x = np.array(range(len(adding_umc)))
-
-        y = np.array(adding_umc)
-        yhat = tensoboard_average(y, window_size)
-        xhat = np.linspace(0, y.shape[0], yhat.shape[0])
-        # plt.plot(yhat, cs[no])
-        if log:
-            plt.semilogy(xhat, yhat, label=legend[no])
-        else:
-            plt.plot(xhat, yhat, label=legend[no])
-
-    plt.ylim(ylim[0], ylim[1])
-    plt.grid()
-    plt.ylabel(vtag)
-    plt.xlabel('updates')
-    plt.legend()
-    plt.title(title)
-
-    if tikz:
-        from tikzplotlib import save as tikz_save
-        tikz_save(filename)
-    elif pdf:
-        plt.savefig(filename, bbox_inches='tight')
-    else:
-        plt.show()
-
-
 def return_logs(path, window_size=0, vtag='mse'):
     """
     Load loss values from logfiles smooth and return.
@@ -66,7 +25,7 @@ def return_logs(path, window_size=0, vtag='mse'):
     dir_lst = []
     file_lst = []
     for root, dirs, files in os.walk(path):
-        # print(dirs)
+        print(dirs)
         if len(dirs) > 0:
             dir_lst.extend(dirs)
         else:
@@ -96,5 +55,5 @@ def return_logs(path, window_size=0, vtag='mse'):
 
 
 if __name__ == '__main__':
-    logdir = './runs'
+    logdir = './experiments/'
     logs = return_logs(path=logdir, vtag='test_accuracy')
