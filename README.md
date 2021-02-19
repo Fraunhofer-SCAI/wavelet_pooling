@@ -1,5 +1,11 @@
 # Adaptive wavelet pooling for CNN
 
+Code in the repository depends on PyTorch and PyWavelets.
+To install these run:
+``` bash
+$ pip install torch torchvision
+$ pip install PyWavelets
+```
 This repository implements and evaluates adaptive wavelet pooling.
 Download it on Ubuntu by typing:
 ``` bash
