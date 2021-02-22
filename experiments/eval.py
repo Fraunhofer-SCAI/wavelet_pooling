@@ -57,3 +57,28 @@ def return_logs(path, window_size=0, vtag='mse'):
 if __name__ == '__main__':
     logdir = './experiments/'
     logs = return_logs(path=logdir, vtag='test_accuracy')
+    res_dict = {}
+
+    for log in logs:
+        key = log[-1].split('_')[3]
+        if key == 'adaptive':
+            key = log[-1].split('_')[3] + '_' + log[-1].split('_')[4] 
+        if key in res_dict.keys():
+            res_list = res_dict[key]
+            res_list.append(log[0][1][-1])
+        else:
+            try:
+                res_dict[key] = [log[0][1][-1]]
+            except:
+                print('missing values', log[-1])
+
+    mean_std_lst = []
+    for exp_key in res_dict.keys():
+        acc_lst = res_dict[exp_key]
+        mean = np.mean(acc_lst)
+        std = np.std(acc_lst)
+        print(exp_key, ':', mean, std)
+        mean_std_lst.append((mean, std, exp_key))
+
+    print('done')
+    

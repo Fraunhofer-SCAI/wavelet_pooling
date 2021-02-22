@@ -39,7 +39,7 @@ for exp in range(10):
 for exp in range(10):
     job = subprocess.Popen(['python', '../mnist_pool.py',
                             '--lr',  '0.12', '--tensorboard',
-                            '--pooling_type', 'mean',
+                            '--pooling_type', 'avg',
                             '--momentum', '0.6',
                             '--gamma', '0.95', '--epochs', '25'])
     job.wait()
