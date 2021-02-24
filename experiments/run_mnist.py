@@ -1,7 +1,7 @@
 import subprocess
 subprocess.call('pwd')
 
-print('running mnist extra rebuttal exps.')
+print('running mnist exps.')
 
 
 for exp in range(10):

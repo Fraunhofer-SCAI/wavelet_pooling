@@ -263,7 +263,7 @@ def conv_fwt(data, wavelet, scales: int = None) -> list:
 
 
 def conv_ifwt(coeffs: list, wavelet) -> torch.tensor:
-   """Reconstruct a signal from wavelet coefficients.
+    """Reconstruct a signal from wavelet coefficients.
     Args:
         coeffs (list): The wavelet coefficient list produced by wavedec.
         wavelet (learnable_wavelets.WaveletFilter): The wavelet object
