@@ -1,13 +1,19 @@
-# Created by moritz wolter, 14.04.20
+# Created by moritz (wolter@cs.uni-bonn.de), 14.04.20
 import torch
-# import numpy as np
 import pywt
-# from util.mackey_glass import MackeyGenerator
-# from util.learnable_wavelets import OrthogonalWavelet
-# import matplotlib.pyplot as plt
 
 
 def get_filter_tensors(wavelet, flip, device):
+    """Convert input wavelet to filter tensors.
+    Args:
+        wavelet: Wavelet object, assmuing ptwt-like
+                 field names.
+        flip ([bool]]): If true filters ar eflipped.
+        device : PyTorch target device.
+    Returns:
+        Tuple containing the four filter tensors
+        dec_lo, dec_hi, rec_lo, rec_hi
+    """
     def create_tensor(filter):
         if flip:
             if isinstance(filter, torch.Tensor):
@@ -29,21 +35,14 @@ def get_filter_tensors(wavelet, flip, device):
 
 def get_pad(data_len, filt_len):
     """ Compute the required padding.
-    :param data: The input tensor.
-    :param wavelet: The wavelet filters used.
-    :return: The numbers to attach on the edges of the input.
+    Args:
+        data: The input tensor.
+        wavelet: The wavelet filters used.
+    Returns:
+        The numbers to attach on the edges of the input.
     """
-    # filt_len = wavelet.__len__()
-    # pywt_coeff_no = (data_len + filt_len - 1) // 2
-    # pywt_len = pywt.dwt_coeff_len(data_len, filt_len, mode='reflect')
-    # assert pywt_coeff_no == pywt_len, 'padding error.'
-    # pad = (2*filt_len - 3)//2
-    # if data_len % 2 != 0:
-    #     pad += 1
-    # pt_coeff_no = (data_len + 2*pad - (filt_len - 1) - 1) // 2 + 1
-    # assert pt_coeff_no == pywt_len, \
-    #  'padding error, this is a bug please open an issue on github.'
-    # pad to we see all filter positions and pywt compatability.
+    # pad to ensure we see all filter positions and
+    # for pywt compatability.
     # convolution output length:
     # see https://arxiv.org/pdf/1603.07285.pdf section 2.3:
     # floor([data_len - filt_len]/2) + 1
@@ -53,6 +52,8 @@ def get_pad(data_len, filt_len):
     #    = floor((data_len + filt_len - 1)/2)
     # (data_len + total_pad - filt_len) + 2 = data_len + filt_len - 1
     # total_pad = 2*filt_len - 3
+
+    # we pad half of the total requried padding on each side.
 
     # we pad half of the total requried padding on each side.
     padr = (2 * filt_len - 3) // 2
@@ -67,9 +68,11 @@ def get_pad(data_len, filt_len):
 
 def fwt_pad(data, wavelet):
     """ Pad the input signal to make the fwt matrix work.
-    :param data: Input data [batch_size, 1, time]
-    :param wavelet: The input wavelet following the pywt wavelet format.
-    :return: The padded input data
+    Args:
+        data: Input data [batch_size, 1, time]
+        wavelet: The input wavelet following the pywt wavelet format.
+    Returns:
+        A pytorch tensor with the padded input data
     """
     padr, padl = get_pad(data.shape[-1], len(wavelet.dec_lo))
 
@@ -80,6 +83,14 @@ def fwt_pad(data, wavelet):
 
 
 def fwt_pad2d(data, wavelet):
+    """Padding for the 2d FWT.
+    Args:
+        data (torch.Tensor): Input data with 4 domensions.
+        wavelet (pywt.Wavelet or WaveletFilter): The wavelet used.
+        mode (str, optional): [description]. Defaults to 'reflect'.
+    Returns:
+        The padded output tensor.
+    """
     padb, padt = get_pad(data.shape[-2], len(wavelet.dec_lo))
     padr, padl = get_pad(data.shape[-1], len(wavelet.dec_lo))
     data_pad = torch.nn.functional.pad(data, [padt, padb, padl, padr],
@@ -114,6 +125,14 @@ def flatten_2d_coeff_lst(coeff_lst_2d, flatten_tensors=True):
 
 
 def construct_2d_filt(lo, hi):
+    """Construct two dimensional filters using outer
+       products.
+    Args:
+        lo (torch.tensor): Low-pass input filter.
+        hi (torch.tensor): High-pass input filter
+    Returns:
+        [torch.tensor]: Stacked 2d filters.
+    """
     ll = outer(lo, lo)
     lh = outer(hi, lo)
     hl = outer(lo, hi)
@@ -128,8 +147,9 @@ def conv_fwt_2d(data, wavelet, scales: int = None) -> list:
 
     Args:
         data (torch.tensor): [batch_size, 1, height, width]
-        wavelet ([type]): [description]
-        scales (int, optional): [description]. Defaults to None.
+        wavelet (WaveletFilter): The wavelet object to be used.
+        scales (int, optional):  The scale level to be computed.
+                                Defaults to None.
 
     Returns:
         [list]: List containing the wavelet coefficients.
@@ -158,11 +178,14 @@ def conv_fwt_2d(data, wavelet, scales: int = None) -> list:
 
 
 def conv_ifwt_2d(coeffs, wavelet):
-    """ 2d non separated ifwt"""
-    # _, _, rec_lo, rec_hi = wavelet.filter_bank
-    # filt_len = len(rec_lo)
-    # rec_lo = torch.tensor(rec_lo).unsqueeze(0)
-    # rec_hi = torch.tensor(rec_hi).unsqueeze(0)
+    """Reconstruct a signal from wavelet coefficients.
+    Args:
+        coeffs (list): The wavelet coefficient list produced by wavedec2.
+        wavelet (learnable_wavelets.WaveletFilter): The wavelet object
+            used to compute the forward transform.
+    Returns:
+        torch.tensor: The reconstructed signal.
+    """
     _, _, rec_lo, rec_hi = get_filter_tensors(
         wavelet, flip=False, device=flatten_2d_coeff_lst(coeffs)[0].device)
     filt_len = rec_lo.shape[-1]
@@ -211,7 +234,7 @@ def conv_fwt(data, wavelet, scales: int = None) -> list:
 
     Args:
         data (torch.tensor): Input time series of shape [batch_size, 1, time]
-        wavelet (util.WaveletFilter): The wavelet object to be used.
+        wavelet (learnable_wavelets.WaveletFilter): The wavelet object to be used.
         scales (int, optional): The scale level to be computed.
                                 Defaults to None.
 
@@ -240,10 +263,14 @@ def conv_fwt(data, wavelet, scales: int = None) -> list:
 
 
 def conv_ifwt(coeffs: list, wavelet) -> torch.tensor:
-    # _, _, rec_lo, rec_hi = wavelet.filter_bank
-    # filt_len = len(rec_lo)
-    # rec_lo = torch.tensor(rec_lo).unsqueeze(0)
-    # rec_hi = torch.tensor(rec_hi).unsqueeze(0)
+   """Reconstruct a signal from wavelet coefficients.
+    Args:
+        coeffs (list): The wavelet coefficient list produced by wavedec.
+        wavelet (learnable_wavelets.WaveletFilter): The wavelet object
+            used to compute the forward transform.
+    Returns:
+        torch.tensor: The reconstructed signal.
+    """
     _, _, rec_lo, rec_hi = get_filter_tensors(wavelet, flip=False,
                                               device=coeffs[-1].device)
     filt_len = rec_lo.shape[-1]
