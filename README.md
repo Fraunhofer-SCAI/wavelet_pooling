@@ -19,7 +19,7 @@ Assuming you want to work with GPU 0, to repeat the experiments from table 1 run
 $ cd experiments
 $ CUDA_VISIBLE_DEVICES=0 python experiments/run_mnist.py
 ```
-To repeat our experiments on street view house numbers, CIFAR-10 run ```train_cifar_SVHN.py``` with the parameters described in the paper.
+To repeat our experiments on street view house numbers or CIFAR-10 run ```train_cifar_SVHN.py``` with the parameters described in the paper.
 
 ###### Unit-Testing
 This repository ships code to compute the fast wavelet transformation
