@@ -43,3 +43,7 @@ If you find this work useful please consider citing the paper:
   year = {2021}
 }
 ```
+
+###### Funding:
+This work was developed in the Fraunhofer Cluster of Excellence Cognitive Internet Technologies.
+
