@@ -2,7 +2,7 @@
 
 This repository implements and evaluates adaptive wavelet pooling as described
 in http://proceedings.mlr.press/v130/wolter21a/wolter21a.pdf .
-Download it on Ubuntu by typing:
+Download the repository on Ubuntu by typing:
 ``` bash
 $ git clone git@github.com:Fraunhofer-SCAI/wavelet_pooling.git
 ```
