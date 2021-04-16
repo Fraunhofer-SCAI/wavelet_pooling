@@ -48,3 +48,7 @@ If you find this work useful please consider citing the paper:
 ###### Funding:
 This work was developed in the Fraunhofer Cluster of Excellence Cognitive Internet Technologies.
 
+###### Toolbox:
+The wavelet toolbox used in this project is maintained at:
+https://github.com/v0lta/PyTorch-Wavelet-Toolbox
+
