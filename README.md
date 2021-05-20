@@ -38,10 +38,12 @@ $ ipython tests/wavelet_test.py
 If you find this work useful please consider citing the paper:
 ```
 @inproceedings{wolter2021adaptive,
-  author={Wolter, Moritz and Garcke, Jochen},
   title={Adaptive wavelet pooling for convolutional neural networks},
-  booktitle={The 24th International Conference on Artificial Intelligence and Statistics (AISTATS)},
-  year = {2021}
+  author={Wolter, Moritz and Garcke, Jochen},
+  booktitle={International Conference on Artificial Intelligence and Statistics},
+  pages={1936--1944},
+  year={2021},
+  organization={PMLR}
 }
 ```
 
