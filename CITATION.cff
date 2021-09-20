@@ -20,7 +20,6 @@ preferred-citation:
   - family-names: "Garcke"
     given-names: "Jochen"
   journal: "International Conference on Artificial Intelligence and Statistics"
-  month: 9
   start: 1936 # First page number
   end: 1944 # Last page number
   title: "Adaptive wavelet pooling for convolutional neural networks"
