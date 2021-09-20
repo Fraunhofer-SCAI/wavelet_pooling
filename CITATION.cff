@@ -13,7 +13,7 @@ doi: 10.5281/zenodo.1234
 date-released: 2021-09-20
 url: "https://github.com/Fraunhofer-SCAI/wavelet_pooling"
 preferred-citation:
-  type: article
+  type: inproceedings
   authors:
   - family-names: "Wolter"
     given-names: "Moritz"
